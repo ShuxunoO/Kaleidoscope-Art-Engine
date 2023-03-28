@@ -5,5 +5,5 @@ __pycache__
 /tests/*
 /build/images/*
 /build/jsons/*
-/layers/
+/layers/*
 /infos/*
