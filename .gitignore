@@ -1,0 +1,8 @@
+.vscode
+.git
+/__pycache__
+/tests
+build/images/*
+build/jsons/*
+layers/*
+infos/*

@@ -1,0 +1,95 @@
+{
+    "namePrefix": "UCAS_NFT",
+    "description": "A set of NFTs created for University of Chinese Academy of Sciences",
+    "baseUri": "ipfs://bafybeiajf64jw5emlgc3iyipjc2n5yawtgentfais7rpn7zubppy3yf3lq",
+    "format": {
+        "width": 1024,
+        "height": 1024,
+        "smoothing": false
+    },
+    "dnaSettings": {
+        "saveDnaHistory": false,
+        "loadDnaHistory": false,
+        "loadDnaHistoryName": ""
+    },
+    "metadataSettings": {
+        "saveDnaInMetadata": true,
+        "showNoneInMetadata": true,
+        "noneAttributeName": "none",
+        "extraMetadata": {
+            "coWorkers": 111,
+            "rareCount": "222"
+        },
+        "outputEthFormat": true,
+        "outputSolanaFormat": true,
+        "showEditionInMetadata": true,
+        "numberAttributes": [
+            {
+                "name": "attack",
+                "maxValue": 100,
+                "minValue": 0
+            },
+            {
+                "name": "defend",
+                "maxValue": 50,
+                "minValue": -50
+            }
+        ]
+    },
+    "solanaMetadata": {
+        "symbol": "LIPC",
+        "seller_fee_basis_points": 1000,
+        "external_url": "https://lipconq.com/",
+        "creators": [
+            {
+                "address": "FsrnTsydAeq5o12jiSi7ZYvnXB2xchHxLnvc4fZDK7Q6",
+                "share": 100
+            }
+        ]
+    },
+    "logSettings": {
+        "showGeneratingProgress": true,
+        "debug": true
+    },
+    "multiVersionSettings": {
+        "layerName": ""
+    },
+    "processCount": 10,
+    "layerConfigurations": [
+        {
+            "totalNumber": 10,
+            "specificCombination": {
+                "Base&Blue_Rhythm": "Eggshell&Blue_Green,Music_Effect$Blue_Firefly"
+            },
+            "do_Balance": true,
+            "startID": 1,
+            "layersOrder":
+            [
+                {
+                    "name": "background",
+                    "isBeaconLayer": false
+                },
+                {
+                    "name": "rocket",
+                    "isBeaconLayer": false
+                },
+                {
+                    "name": "building",
+                    "isBeaconLayer": false
+                },
+                {
+                    "name": "plant",
+                    "isBeaconLayer": false
+                },
+                {
+                    "name": "frame",
+                    "isBeaconLayer": false
+                },
+                {
+                    "name": "texture",
+                    "isBeaconLayer": false
+                }
+            ]
+        }
+    ]
+}
