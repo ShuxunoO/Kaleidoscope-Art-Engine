@@ -5,4 +5,5 @@
 build/images/*
 build/jsons/*
 layers/*
-infos/*
+infos/:
+.log
