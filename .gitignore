@@ -1,9 +1,10 @@
 .vscode
 .git
+.log
 /__pycache__
 /tests
-build/images/*
-build/jsons/*
-layers/*
-infos/:
-.log
+/build/images/*
+/build/jsons/*
+/layers/*
+/infos/*
+
