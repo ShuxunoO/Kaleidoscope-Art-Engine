@@ -1,10 +1,9 @@
 .vscode
 .git
 .log
-/__pycache__
-/tests
+__pycache__
+/tests/*
 /build/images/*
 /build/jsons/*
 /layers/*
 /infos/*
-
