@@ -23,10 +23,11 @@ class ENV_PATH:
             Path.mkdir(file_path)
         return file_path
 
-    BASE_PATH = Path(__file__).parent.parent
+    BASE_PATH = Path("CONST_ENV.py").absolute().parent
     LAYER_PATH = Path.joinpath(BASE_PATH,"layers")
     CONFIG_PATH = Path.joinpath(BASE_PATH, "config.json")
     INFO_PATH = make_dir(Path.joinpath(BASE_PATH, "infos"))
     BUILD_PATH = make_dir(Path.joinpath(BASE_PATH, "build"))
     IMAGES_PATH = make_dir(Path.joinpath(BUILD_PATH, "images"))
     JSON_PATH = make_dir(Path.joinpath(BUILD_PATH, "jsons"))
+

@@ -1,7 +1,7 @@
 {
-    "namePrefix": "UCAS_NFT",
-    "description": "A set of NFTs created for University of Chinese Academy of Sciences",
-    "baseUri": "ipfs://bafybeiajf64jw5emlgc3iyipjc2n5yawtgentfais7rpn7zubppy3yf3lq",
+    "namePrefix": "BanaCat Eggs",
+    "description": "xxx",
+    "baseUri": "ipfs:/xxx",
     "format": {
         "width": 1024,
         "height": 1024,
@@ -59,35 +59,54 @@
         {
             "totalNumber": 10,
             "specificCombination": {
-                "Base&Blue_Rhythm": "Eggshell&Blue_Green,Music_Effect$Blue_Firefly"
             },
             "do_Balance": true,
             "startID": 1,
             "layersOrder":
             [
                 {
-                    "name": "background",
+                    "name": "Background",
                     "isBeaconLayer": false
                 },
                 {
-                    "name": "rocket",
-                    "isBeaconLayer": false
+                    "name": "Holder",
+                    "isBeaconLayer": true
                 },
                 {
-                    "name": "building",
-                    "isBeaconLayer": false
+                    "name": "Eggshell",
+                    "isBeaconLayer": false,
+                    "groupBy": "Holder",
+                    "hideInMetadata": false
                 },
                 {
-                    "name": "plant",
-                    "isBeaconLayer": false
+                    "name": "Pattern",
+                    "groupBy": "Holder",
+                    "isBeaconLayer": false,
+                    "hideInMetadata": false
                 },
                 {
-                    "name": "frame",
-                    "isBeaconLayer": false
+                    "name": "Stroke",
+                    "groupBy": "Holder",
+                    "isBeaconLayer": true,
+                    "hideInMetadata": false
                 },
                 {
-                    "name": "texture",
-                    "isBeaconLayer": false
+                    "name": "Halo",
+                    "groupBy": "Holder",
+                    "isBeaconLayer": false,
+                    "hideInMetadata": false
+                },
+                {
+                    "name": "Music_Effect",
+                    "isBeaconLayer": false,
+                    "groupBy": "Holder",
+                    "hideInMetadata": false
+                },
+                {
+                    "name": "Base",
+                    "isBeaconLayer": false,
+                    "groupBy": "Holder",
+                    "hideInMetadata": false
                 }
             ]
         }
