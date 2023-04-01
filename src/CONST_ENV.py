@@ -30,13 +30,3 @@ class ENV_PATH:
     BUILD_PATH = make_dir(Path.joinpath(BASE_PATH, "build"))
     IMAGES_PATH = make_dir(Path.joinpath(BUILD_PATH, "images"))
     JSON_PATH = make_dir(Path.joinpath(BUILD_PATH, "jsons"))
-
-
-if __name__ == "__main__":
-    print(ENV_PATH.BASE_PATH)
-    print(ENV_PATH.LAYER_PATH)
-    print(ENV_PATH.CONFIG_PATH)
-    print(ENV_PATH.INFO_PATH)
-    print(ENV_PATH.BUILD_PATH)
-    print(ENV_PATH.IMAGES_PATH)
-    print(ENV_PATH.JSON_PATH)

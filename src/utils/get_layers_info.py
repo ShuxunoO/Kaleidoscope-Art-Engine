@@ -1,16 +1,20 @@
 import sys
 import re
-sys.path.append("..")
+from pathlib import Path
+sys.path.append(".")
+from src.CONST_ENV import ENV_PATH as ENV
+
 
 
 def get_dirlist_and_filelist(file_path):
     """
     It takes a file path and returns a files list and a subfolders list in the path
-    :param file_path: the path to the folder containing the files you want to rename
+    :param file_path: the path to the folder containing the files and subfolders
     :return: A tuple of two lists.
     """
 
-    file_list = os.listdir(file_path)  # find all files in the file_path
+    # find all files in the file_path
+    file_list = Path.iterdir(file_path) 
     # pick out subfolders in file_path
     dir_list = [f.stem for f in file_path.iterdir() if f.is_dir()]
     # get the remaining files in file_path
@@ -128,3 +132,10 @@ def get_file_num(file_path):
     for root, dirs, files in os.walk(file_path):
         counter = counter + len(files)
     return counter
+
+
+if __name__ == '__main__':
+
+    layer_list, dir_list = get_dirlist_and_filelist(ENV.LAYER_PATH)
+    print(layer_list)
+    print(dir_list)
