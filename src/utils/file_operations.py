@@ -12,7 +12,7 @@ def save_json(save_path, filename, data):
     :param filename: The name of the file to save
     :param data: The data to be saved
     """
-    file_path = Path.joinpath(save_path, filename + ".json")
+    file_path = Path.joinpath(save_path, filename)
     with open(file_path, 'w', encoding='UTF-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
 

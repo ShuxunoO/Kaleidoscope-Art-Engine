@@ -27,7 +27,7 @@ class ENV_PATH:
     LAYER_PATH = Path.joinpath(BASE_PATH,"layers")
     CONFIG_PATH = Path.joinpath(BASE_PATH, "config.json")
     INFO_PATH = make_dir(Path.joinpath(BASE_PATH, "infos"))
-    BUILD_PATH = make_dir(Path.joinpath(BASE_PATH, "build"))
-    IMAGES_PATH = make_dir(Path.joinpath(BUILD_PATH, "images"))
-    JSON_PATH = make_dir(Path.joinpath(BUILD_PATH, "jsons"))
+    OUTPUT_PATH = make_dir(Path.joinpath(BASE_PATH, "build"))
+    IMAGES_PATH = make_dir(Path.joinpath(OUTPUT_PATH, "images"))
+    JSON_PATH = make_dir(Path.joinpath(OUTPUT_PATH, "jsons"))
 

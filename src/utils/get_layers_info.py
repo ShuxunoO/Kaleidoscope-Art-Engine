@@ -1,36 +1,40 @@
 import re
 import sys
+import os
 from pathlib import Path
 sys.path.append(".")  # add the current path to the system path
 from src.CONST_ENV import ENV_PATH as ENV
 
 
-def get_dirlist_and_filelist(file_path):
+def get_dirlist_and_filelist(file_path) -> tuple:
     """
     It takes a file path and returns a files list and a subfolders list in the path
+
     :param file_path: the path to the folder containing the files and subfolders
+
     :return: A file list and a subfolders list.
     """
 
-    # find all files in the file_path
-    file_list = Path.iterdir(file_path)
-
-    # pick out subfolders in file_path
-    dir_list = [f.stem for f in file_path.iterdir() if f.is_dir()]
+    # get subfolders in file_path
+    dir_list = [dir_.name for dir_ in Path.iterdir(file_path) if Path.is_dir(dir_)]
+    print(dir_list)
 
     # get the remaining files in file_path
-    layer_list = list(set(file_list) - set(dir_list))
+    layer_list = [layer.name for layer in Path.iterdir(file_path) if Path.is_file(layer)]
+    print(layer_list)
 
     return layer_list, dir_list
 
 
-def get_layers_info(base_path, layer_info):
+def get_layers_info(base_path, layer_info) -> dict:
     """
-        It takes a file name and a base path, and returns a dictionary, which contains the
-        file name as it's key and the layerinfo dictionary of it's value.
+    It takes a base path and a layer info and returns a dictionary of the form {layer_name: layer_info}.
 
-        :param base_path: the path to the folder containing the file
-        :param layer_name: the name of the file you want to get the layerinfo from
+    :param base_path: the base path of the layers
+    :param layer_info: the layer info of the layers
+
+    :return: A dictionary of the form {layer_name: layer_info}.
+
     """
     # get the file list and subfolder list in the base path
     current_path = Path.joinpath(base_path, layer_info["name"])
@@ -41,97 +45,104 @@ def get_layers_info(base_path, layer_info):
     layerinfo_dict.update(layer_info)
     layerinfo_dict.update({
         # remove the suffix and weight to get purename
-        "layer_list": [re.split("[#%.]", layer)[0] for layer in layer_list],
-        "dir_list": dir_list,
-        "beacon_dir_list":[],
-        "subordinate_dir_list":[],
+        "layer_list": layer_list,
+        "sub_dir_list": dir_list,
         "layers_number": get_file_num(current_path),
         "sum_of_weights": "unknown",
         "is_balanced": False
         })
 
-
+    # 如果当前目录下有文件，则获取当前目录下的文件信息
     if len(layer_list):
         get_layerinfo_in_currentdir(current_path, layer_list, layerinfo_dict)
 
+    # 如果当前目录下有子目录，则获取子目录下的文件信息
     if len(dir_list):
-        get_layerinfo_in_subdir(
-            layer_info["name"], current_path, layerinfo_dict)
+        get_layerinfo_in_subdir(current_path, dir_list, layerinfo_dict)
 
     return {layer_info["name"]: layerinfo_dict}
 
 
-def get_layerinfo_in_currentdir(file_path, layer_name, layerinfo_dict):
+def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
     """
-    This function takes a base path and a file name, and returns a dictionary with the layer name as
-    the key and a dictionary of layer information as the value
-    When "existSubdir" is False, it means there is no subdirectory in current base path.
-
-    :param base_path: The path to the folder where the layer is stored
-    :param file_name: The name of the layer
-    :return: A dictionary with the layer name as the key and the layer infos as the value.
     """
-    layer_list, dir_list = get_dirlist_and_filelist(file_path)
     for layer in layer_list:
-        item_name = layer[:-4]  # remove the suffix
-        name, percentage, weight = get_purename_and_weight(item_name)
+        layer_name, percentage, amount = get_purename_and_weight(layer)
         layer_info = {
-            "path": str(Path(file_path.joinpath(layer)).resolve()),
+            "path": str(file_path.joinpath(layer).resolve()),
             "percentage": percentage,
-            "weight": weight
+            "amount": amount
         }
-        layerinfo_dict.update({name: layer_info})
+        layerinfo_dict.update({layer_name: layer_info})
 
 
-def get_layerinfo_in_subdir(dir_name, base_path, layerinfo_dict):
+def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict) -> dict:
     """
-    It takes a base path and a directory name, and returns a dictionary, which contains the
-    dirctory name as it's key and the layerinfo dictionary of it's value.
-    When "existSubdir" is True, it means there existing subdirectory in current base path.
-
-    :param base_path: the path of the directory where the subdirectories are located
-    :param layerinfo_dict: a dictionary to store the information
+    
     """
-    layer_list, dir_list = get_dirlist_and_filelist(base_path)
     for dir_item in dir_list:
-        sub_path = Path(base_path.joinpath(dir_item)).resolve()
-        sublayer_list = os.listdir(sub_path)
+        current_path = base_path.joinpath(dir_item)
+        # 获取当前文件夹下的文件列表
+        sublayer_list = [layer for layer in  Path.iterdir(current_path) if Path.is_file(layer)]
         sublayer_info_dict = {}
-        sublayer_info_dict.update({"name": dir_name + "-" + dir_item,
-                                "layers_number": len(os.listdir(sub_path)),
+        sublayer_info_dict.update({
+                                    "subDir_name": dir_item,
+                                    "layers_number": len(sublayer_list),
+                                    "layer_list": [layer.name for layer in sublayer_list]
                                     })
-        sublayer_info_dict.update(
-            {"layer_list": [re.split("[#%.]", layer)[0] for layer in os.listdir(sub_path)]})
+        # 更新每个文件的信息
         for layer in sublayer_list:
-            layer_name = layer[:-4]  # remove the suffix
-            name, weight = get_purename_and_weight(layer_name)
-            sublayer_info_dict.update({name: {
-                "path": str(sub_path.joinpath(layer)),
-                "weight": weight
+            layer_name, percentage, amount = get_purename_and_weight(layer.name)
+            sublayer_info_dict.update({layer_name: {
+                "path": str(layer),
+                "percentage": percentage,
+                "amount": amount
             }})
         layerinfo_dict.update({dir_item: sublayer_info_dict})
 
 
-def get_purename_and_weight(layer_name):
+def get_purename_and_weight(layer) -> tuple:
     """
     It takes a string of the layer name and returns a tuple of the form (layer_name, percentage, number).
 
-    :param layer_name: the name of the layer, such as 'conv1_1#1'
-    :return: A tuple of the purename and weight.
+    :param layer_name: the name of the layer, such as 'layername1%20.png'
+    :return: A tuple of the purename and percentage/weight.
     """
 
-    name_weight_list = layer_name.split('#')
-    purename = name_weight_list[0]
-    if len(name_weight_list) == 1 or int(name_weight_list[1]) <= 0:
-        weight = -1  # user doesn't assign a weight of this layer
+    # Legal naming format：layername.png
+    # or layername%percentage.png 
+    # or layername#weight.pn
+
+    layer_name = None
+    percentage = None
+    amount = None
+
+    if re.match(r".*%\d+\..*$", layer):
+        layer_name, percentage, _ =  re.split("[%.]", layer)
+    
+    elif re.match(r".*#\d+\..*$", layer):
+        layer_name, amount, _ = re.split("[#.]", layer)
+    
+    elif re.match(r".*\..*$",layer ):
+        layer_name, _ =  re.split("[.]", layer)
+
     else:
-        weight = int(name_weight_list[1])
-    return purename, weight
+        print(f"The layer name {layer} is illegal.")
+        exit(1)
+    
+    # 转换一下数据类型
+    if percentage:
+        percentage = float(percentage)
+
+    if amount:
+        amount = int(amount)
+
+    return layer_name, percentage, amount
 
 
-def get_file_num(file_path):
+def get_file_num(file_path) -> int:
     """
-    It counts the number of files in a directory
+    It counts the number of files in the directory of the file_path.
     :return: The number of files in the directory.
     """
     counter = 0
