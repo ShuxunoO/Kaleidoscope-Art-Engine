@@ -10,18 +10,18 @@ def get_dirlist_and_filelist(file_path) -> tuple:
     """
     It takes a file path and returns a files list and a subfolders list in the path
 
+    Args:
     :param file_path: the path to the folder containing the files and subfolders
 
+    Returns:
     :return: A file list and a subfolders list.
     """
 
     # get subfolders in file_path
     dir_list = [dir_.name for dir_ in Path.iterdir(file_path) if Path.is_dir(dir_)]
-    print(dir_list)
 
     # get the remaining files in file_path
     layer_list = [layer.name for layer in Path.iterdir(file_path) if Path.is_file(layer)]
-    print(layer_list)
 
     return layer_list, dir_list
 
@@ -30,9 +30,11 @@ def get_layers_info(base_path, layer_info) -> dict:
     """
     It takes a base path and a layer info and returns a dictionary of the form {layer_name: layer_info}.
 
+    Args:
     :param base_path: the base path of the layers
     :param layer_info: the layer info of the layers
 
+    Returns:
     :return: A dictionary of the form {layer_name: layer_info}.
 
     """
@@ -65,6 +67,16 @@ def get_layers_info(base_path, layer_info) -> dict:
 
 def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
     """
+    get the information of the layers in the current directory
+
+    Args:
+    :param file_path: the path to the current directory
+    :param layer_list: the list of the layers in the current directory
+    :param layerinfo_dict: the dictionary to store the layers information
+
+    Returns:
+    :return: A dictionary of the form {layer_name: layer_info}.
+
     """
     for layer in layer_list:
         layer_name, percentage, amount = get_purename_and_weight(layer)
@@ -78,6 +90,15 @@ def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
 
 def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict) -> dict:
     """
+    get the information of the layers in the subdirectory
+
+    Args:
+    :param base_path: the base path of the layers
+    :param dir_list: the list of the subdirectories
+    :param layerinfo_dict: the dictionary to store the layers information
+
+    Returns:
+    :return: A dictionary of the form {dir_name: layer_info}.
     
     """
     for dir_item in dir_list:
@@ -105,7 +126,10 @@ def get_purename_and_weight(layer) -> tuple:
     """
     It takes a string of the layer name and returns a tuple of the form (layer_name, percentage, number).
 
+    Args:
     :param layer_name: the name of the layer, such as 'layername1%20.png'
+
+    Returns:
     :return: A tuple of the purename and percentage/weight.
     """
 
@@ -143,6 +167,11 @@ def get_purename_and_weight(layer) -> tuple:
 def get_file_num(file_path) -> int:
     """
     It counts the number of files in the directory of the file_path.
+
+    Args:
+    :param file_path: the path to the directory
+
+    Returns:
     :return: The number of files in the directory.
     """
     counter = 0
