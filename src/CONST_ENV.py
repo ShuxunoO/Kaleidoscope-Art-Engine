@@ -25,9 +25,9 @@ class ENV_PATH:
 
     BASE_PATH = Path("CONST_ENV.py").absolute().parent
     LAYER_PATH = Path.joinpath(BASE_PATH,"layers")
-    CONFIG_PATH = Path.joinpath(BASE_PATH, "config.json")
+    CONFIG_PATH = Path.joinpath(BASE_PATH, "configs", "config.json")
     INFO_PATH = make_dir(Path.joinpath(BASE_PATH, "infos"))
-    OUTPUT_PATH = make_dir(Path.joinpath(BASE_PATH, "build"))
+    LOGGING_PATH = INFO_PATH
+    OUTPUT_PATH = make_dir(Path.joinpath(BASE_PATH, "output"))
     IMAGES_PATH = make_dir(Path.joinpath(OUTPUT_PATH, "images"))
     JSON_PATH = make_dir(Path.joinpath(OUTPUT_PATH, "jsons"))
-

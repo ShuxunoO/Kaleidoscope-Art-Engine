@@ -26,7 +26,7 @@ def get_dirlist_and_filelist(file_path) -> tuple:
     return layer_list, dir_list
 
 
-def get_layers_info(base_path, layer_info) -> dict:
+def get_layers_info(base_path, layer_info, total_Supply) -> dict:
     """
     It takes a base path and a layer info and returns a dictionary of the form {layer_name: layer_info}.
 
@@ -47,25 +47,27 @@ def get_layers_info(base_path, layer_info) -> dict:
     layerinfo_dict.update(layer_info)
     layerinfo_dict.update({
         # remove the suffix and weight to get purename
-        "layer_list": layer_list,
-        "sub_dir_list": dir_list,
         "layers_number": get_file_num(current_path),
+        "layer_list": layer_list,
+        "layer_weights_list": [],
+        "sub_dir_list": dir_list,
+        "subdir_weights_list": [],
         "sum_of_weights": "unknown",
         "is_balanced": False
         })
 
     # 如果当前目录下有文件，则获取当前目录下的文件信息
     if len(layer_list):
-        get_layerinfo_in_currentdir(current_path, layer_list, layerinfo_dict)
+        get_layerinfo_in_currentdir(current_path, layer_list, layerinfo_dict, total_Supply)
 
     # 如果当前目录下有子目录，则获取子目录下的文件信息
     if len(dir_list):
-        get_layerinfo_in_subdir(current_path, dir_list, layerinfo_dict)
+        get_layerinfo_in_subdir(current_path, dir_list, layerinfo_dict, total_Supply)
 
     return {layer_info["name"]: layerinfo_dict}
 
 
-def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
+def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict, total_Supply) -> dict:
     """
     get the information of the layers in the current directory
 
@@ -80,6 +82,9 @@ def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
     """
     for layer in layer_list:
         layer_name, percentage, amount = get_purename_and_weight(layer)
+        # convert amount to Proportions
+        if percentage == None and amount != None:
+            percentage = round(amount / total_Supply, 8)
         layer_info = {
             "path": str(file_path.joinpath(layer).resolve()),
             "percentage": percentage,
@@ -88,7 +93,7 @@ def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict) -> dict:
         layerinfo_dict.update({layer_name: layer_info})
 
 
-def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict) -> dict:
+def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict, total_Supply) -> dict:
     """
     get the information of the layers in the subdirectory
 
@@ -109,11 +114,15 @@ def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict) -> dict:
         sublayer_info_dict.update({
                                     "subDir_name": dir_item,
                                     "layers_number": len(sublayer_list),
-                                    "layer_list": [layer.name for layer in sublayer_list]
+                                    "layer_list": [layer.name for layer in sublayer_list],
+                                    "layer_weights_list": []
                                     })
         # 更新每个文件的信息
         for layer in sublayer_list:
             layer_name, percentage, amount = get_purename_and_weight(layer.name)
+            # convert amount to Proportions
+            if percentage == None and amount != None:
+                percentage = round(amount / total_Supply, 8)
             sublayer_info_dict.update({layer_name: {
                 "path": str(layer),
                 "percentage": percentage,

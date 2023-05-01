@@ -57,7 +57,7 @@
     "processCount": 10,
     "layerConfigurations": [
         {
-            "totalNumber": 10,
+            "totalSupply": 10000,
             "specificCombination": {
             },
             "do_Balance": true,

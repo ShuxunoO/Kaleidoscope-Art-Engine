@@ -18,7 +18,7 @@ def save_json(save_path, filename, data) -> None:
 
 
 # load json file
-def load_json(config_path) -> dict:
+def load_json(json_path) -> dict:
     """
     It loads a JSON file and returns the contents as a Python dictionary
     
@@ -26,7 +26,7 @@ def load_json(config_path) -> dict:
     :param config_path: The path to the config file
     :return: A dictionary
     """
-    with open(config_path, encoding='UTF-8') as f:
+    with open(json_path, encoding='UTF-8') as f:
         return json.load(f)
 
 # 将数据对象存储为二进制文件
