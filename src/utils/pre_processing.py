@@ -8,21 +8,19 @@ import file_operations as fop
 
 from src.CONST_ENV import ENV_PATH as ENV
 
-# TODO: 
-    # 1. 定义计算图层列表权重之和的函数
-    # 2. 定义计算当前图层中子文件夹图层权重之和的参数
 
-def count_weights_in_layer_list(layer_info) -> float:
+def count_weights_in_layer_list(layer_info) -> tuple:
     """count sum of weights in layer_list of the  layer_info.
 
     Args:
         layer_info (dict): the layer info of the layer_list
 
     Returns:
-        float: sum of weights in layer_list of the  layer_info.
+        tuple: sum of weights in layer_list of the  layer_info and total number of layer with percentage.
 
     """
-    sum = 0.0
+    weight_sum = 0.0
+    layer_counter = 0
     layer_list = layer_info.get("layer_list")
     if len(layer_list) == 0:
         return 0.0
@@ -32,48 +30,157 @@ def count_weights_in_layer_list(layer_info) -> float:
             layer = layer_info.get(layer_name)
             percentage = layer.get("percentage")
             if percentage is not None:
-                sum += percentage
+                weight_sum += percentage
+                # 加入异常处理，如果图层的权重之和超过1，抛出异常
+                layer_counter += 1
             else:
                 continue
-        return sum
+        return weight_sum, layer_counter
 
 
-def count_weights_in_subdir_list(layer_info) -> float:
+def count_weights_in_subdir_list(layer_info) -> tuple:
     """count sum of weights in subdir_list of the  layer_info.
 
     Args:
         layer_info (dict): the layer info of the subdir_list
 
     Returns:
-        float: sum of weights in subdir_list of the  layer_info.
+        tuple: sum of weights in subdir_list of the layer_info and total number of layer with percentage.
 
     """
-    sum = 0.0
+    weight_sum = 0.0
+    layer_counter = 0
     subdir_list = layer_info.get("sub_dir_list")
     if len(subdir_list) == 0:
         return 0.0
     else:
         for subdir in subdir_list:
             subdir_info = layer_info.get(subdir)
-            sum += count_weights_in_layer_list(subdir_info)
-        return sum
+            dir_weight, counter = count_weights_in_layer_list(subdir_info)
+            weight_sum += dir_weight
+            # 加入异常处理，如果图层的权重之和超过1，抛出异常
+            layer_counter += counter
+        return weight_sum, layer_counter
+
+
+def update_layers_weight(rest_weight, rest_layer_num, layer_info) -> tuple:
+    """
+        update the weight of the layer_info.
+
+    Args:
+        rest_weight (float): the rest weight of the layer_info
+        rest_layer_num (int): the rest layer number of the layer_info
+        layer_info (dict): the layer info of the layer_info
+        
+    Returns:
+        tuple: rest weight and rest layer number of the layer without percentage.
+
+    """
+    # 将剩余的权重赋予给剩余的图层
+    layer_list = layer_info.get("layer_list")
+    average_weight = round(rest_weight / rest_layer_num, 4)
+    for layer in layer_list:
+        layer_name = re.split("[%#.]", layer)[0]
+        layer = layer_info.get(layer_name)
+        if layer.get("percentage") is None:
+            if rest_layer_num == 1:
+                layer["percentage"] = rest_weight
+            else:
+                layer["percentage"] = average_weight
+                rest_weight -= average_weight
+                rest_layer_num -= 1
+        else:
+            continue
+        return rest_weight, rest_layer_num
+
+def balance_weights_in_layer_list(layer_info) -> None:
+    """
+        balance the weights in layer_list of the layer_info.
+
+    Args:
+        layer_info (dict): the layer info of the layer_list
+
+    """
+    weight_sum, layer_counter = count_weights_in_layer_list(layer_info)
+    rest_weight = 1.0 - weight_sum
+    rest_layer_num = layer_info.get("layers_number") - layer_counter
+    # 图层数为负数，抛出异常
+    update_layers_weight(rest_weight, rest_layer_num, layer_info)
+
+
+def balance_weights_in_subdir_list(layer_info) -> None:
+    """ 
+        balance the weights in subdir_list of the layer_info.
+
+    Args:
+        layer_info (dict): the layer info of the subdir_list
+    """
+    weight_sum, layer_counter = count_weights_in_subdir_list(layer_info)
+    rest_weight = 1.0 - weight_sum
+    rest_layer_num = layer_info.get("layers_number") - layer_counter
+    # 图层数为负数，抛出异常
+    for subdir in layer_info.get("sub_dir_list"):
+        subdir_info = layer_info.get(subdir)
+        rest_weight, rest_layer_num = update_layers_weight(rest_weight, rest_layer_num, subdir_info)
+
+def register_layer_list_weight(layer_info) -> None:
+    """
+        register the weight of the layer_list in the layer_info.
+
+    Args:
+        layer_info (dict): the layer info of the layer_list
+
+    """
+    layer_list = layer_info.get("layer_list")
+    # 登记图层列表中的图层权重
+    if len(layer_list) != 0:
+        for layer in layer_list:
+            layer_name = re.split("[%#.]", layer)[0]
+            layer_weight = layer_info.get(layer_name).get("percentage")
+            layer_info["layer_weights_list"].append(layer_weight)
+
+
+def register_subdir_list_weight(layer_info) -> None:
+    """
+        register the weight of the subdir_list in the layer_info.
+
+    Args:
+        layer_info (dict): the layer info of the subdir_list
+
+    """
+    sub_dir_list = layer_info.get("sub_dir_list")
+    # 登记子文件夹列表中的图层权重
+    if len(sub_dir_list) != 0:
+        for subdir in sub_dir_list:
+            subdir_info = layer_info.get(subdir)
+            # 登记子文件夹中的图层权重
+            register_layer_list_weight(subdir_info)
+            sub_dir_weight = sum(subdir_info.get("layer_weights_list"))
+            # 登记该子文件夹的权重
+            layer_info["sub_dir_weights_list"].append(sub_dir_weight)
+
+
+def pre_operation(layer_info_dict) -> None:
+    """
+        pre operation before balance the weights in layer_info.
+
+    Args:
+        layer_info_dict (dict): the layer info of the layer_info
+
+    """
+    layers_info = layer_info_dict.get("layers_info")
+    for layer_name, layer_info in layers_info.items():
+        if len(layer_info.get("layer_list")) != 0:
+            balance_weights_in_layer_list(layer_info)
+            register_layer_list_weight(layer_info)
+        if len(layer_info.get("sub_dir_list")) != 0:
+            balance_weights_in_subdir_list(layer_info)
+            register_subdir_list_weight(layer_info)
 
 
 
 if __name__ == "__main__":
     layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo.json"))
-    config_info = fop.load_json(ENV.CONFIG_PATH)
-    layer_configs = config_info.get("layerConfigurations")
-    for index in range(len(layer_configs)):
-        config_info_item = layer_configs[index]
-        layers_info_item = layers_info[index]
-        layers_order_list = config_info_item.get("layersOrder")
-        for layer in layers_order_list:
-            layer_name = layer["name"]
-            target_layer = layers_info_item[layer_name]
-            if len(target_layer.get("layer_list")) != 0:
-                layer_list_weight = count_weights_in_layer_list(target_layer)
-                print(f"layer_list_weight: {layer_list_weight}")
-            if len(target_layer.get("sub_dir_list")) != 0:
-                subdir_list_weight = count_weights_in_subdir_list(target_layer)
-                print(f"subdir_list_weight: {subdir_list_weight}")
+    for info_item in layers_info:
+        pre_operation(info_item)
+    fop.save_json(layers_info, ENV.INFO_PATH.joinpath("layersInfo_update.json"))
