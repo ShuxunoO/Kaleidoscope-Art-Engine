@@ -91,7 +91,9 @@ def update_layers_weight(rest_weight, rest_layer_num, layer_info) -> tuple:
                 rest_layer_num -= 1
         else:
             continue
-
+        
+    # flag the layer_info is balanced
+    layer_info["is_balanced"] = True
     return rest_weight, rest_layer_num
 
 def balance_weights_in_layer_list(layer_info) -> None:
@@ -123,6 +125,9 @@ def balance_weights_in_subdir_list(layer_info) -> None:
     for subdir in layer_info.get("sub_dir_list"):
         subdir_info = layer_info.get(subdir)
         rest_weight, rest_layer_num = update_layers_weight(rest_weight, rest_layer_num, subdir_info)
+
+    # flag the layer_info is balanced
+    layer_info["is_balanced"] = True
 
 def register_layer_list_weight(layer_info) -> None:
     """
