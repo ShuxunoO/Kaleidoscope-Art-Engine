@@ -31,6 +31,15 @@ def normalize_probility_list(prob_list):
 
 
 def make_layer_list_recipe(layer_info) -> dict:
+    """ make the layer list recipe.
+
+    Args:
+        layer_info (dict): the layer info of the layer_info.
+
+    Returns:
+        dict: a dict contains layer paths with a normalized layer probability list.
+
+    """
     layer_list = layer_info.get("layer_list")
     layer_list_recipe = {}
     layer_list_recipe["layer_weight_info_list"] = []
@@ -66,6 +75,15 @@ def make_layer_list_recipe(layer_info) -> dict:
 
 
 def make_subdir_list_recipe(layer_info):
+    """ make the subdir list recipe.
+
+    Args:
+        layer_info (dict): the layer info of the layer_info.
+
+    Returns:
+        dict: a dict contains layer paths with a normalized layer probability list.
+        
+    """
     sub_dir_list = layer_info.get("sub_dir_list")
     sub_dir_list_recipe = {}
     sub_dir_list_recipe.update({"sub_dir_info": [layer_info.get("sub_dir_list"), layer_info.get("subdir_weights_list")]})

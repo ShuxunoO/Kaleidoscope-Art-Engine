@@ -2,12 +2,14 @@ import os
 import re
 import sys
 from pathlib import Path
+from tqdm import tqdm
 
 sys.path.append(".")
 import file_operations as fop
 
 from src.CONST_ENV import ENV_PATH as ENV
-
+from src.utils import get_layers_info as get_info
+from src.utils import generate_layers_recipe as gen_recipe
 
 def count_weights_in_layer_list(layer_info) -> tuple:
     """count sum of weights in layer_list of the  layer_info.
@@ -183,11 +185,38 @@ def pre_operation(layer_info_dict) -> None:
             balance_weights_in_subdir_list(layer_info)
             register_subdir_list_weight(layer_info)
 
+def process() -> None:
+    """ 
+        process the layers information.
+    
+    """
 
+    # 读取图层信息
+    CONFIG = fop.load_json(ENV.CONFIG_PATH)
+    collection_info = []
+    for layer_config in tqdm(CONFIG["layerConfigurations"], desc="Getting config info", ncols=100, unit="config", ascii=True):
+        # 每一种配置的图层信息生成一个独立的字典文件
+        layers_info_dict = {}
+        totalSupply = layer_config["totalSupply"]
+        layers_info_dict["totalSupply"] = totalSupply
+        layers_info_dict["layers_info"] = {}
+        # 循环遍历当前配置中的所有图层信息
+        for layer in tqdm(layer_config["layersOrder"], desc="Getting layers info", ncols=100, unit="layer", ascii=True):
+            layers_info = get_info.get_layers_info(ENV.LAYER_PATH, layer, totalSupply)
+            layers_info_dict["layers_info"].update(layers_info)
+        collection_info.append(layers_info_dict)
+    fop.save_json(ENV.INFO_PATH,"layersInfo.json", collection_info)
 
-if __name__ == "__main__":
+    # 对图层信息进行均衡等预处理操作
     layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo.json"))
     for info_item in layers_info:
         pre_operation(info_item)
-
     fop.save_json(ENV.INFO_PATH,"layersInfo_update.json", layers_info)
+
+    # 生成图层信息的菜单信息
+    layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_update.json"))
+    layers_recipe = gen_recipe.generate_NFT_recipe(layers_info)
+    fop.save_json(ENV.INFO_PATH,"layersInfo_recipe.json", layers_recipe)
+
+if __name__ == "__main__":
+    process()

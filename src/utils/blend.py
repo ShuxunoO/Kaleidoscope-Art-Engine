@@ -9,8 +9,12 @@ import file_operations as fop
 from PIL import Image
 from src.CONST_ENV import ENV_PATH as ENV
 
+from src.utils import pre_processing 
 
 if __name__ == "__main__":
+    pre_processing.process()
+    CONFIG = fop.load_json(ENV.CONFIG_PATH)
+    layersInfo_recipe = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_recipe.json"))
 
 
     elements = [

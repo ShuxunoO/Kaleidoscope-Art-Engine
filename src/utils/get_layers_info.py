@@ -49,7 +49,6 @@ def get_layers_info(base_path, layer_info, total_Supply) -> dict:
         "layer_weights_list": [],
         "sub_dir_list": dir_list,
         "subdir_weights_list": [],
-        "sum_of_weights": "unknown",
         "is_balanced": False
         })
 
