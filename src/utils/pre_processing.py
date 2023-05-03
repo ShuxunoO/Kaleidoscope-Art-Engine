@@ -78,20 +78,21 @@ def update_layers_weight(rest_weight, rest_layer_num, layer_info) -> tuple:
     """
     # 将剩余的权重赋予给剩余的图层
     layer_list = layer_info.get("layer_list")
-    average_weight = round(rest_weight / rest_layer_num, 4)
+    average_weight = round(rest_weight / rest_layer_num, 6)
     for layer in layer_list:
         layer_name = re.split("[%#.]", layer)[0]
         layer = layer_info.get(layer_name)
         if layer.get("percentage") is None:
             if rest_layer_num == 1:
-                layer["percentage"] = rest_weight
+                layer["percentage"] = round(rest_weight, 6)
             else:
                 layer["percentage"] = average_weight
                 rest_weight -= average_weight
                 rest_layer_num -= 1
         else:
             continue
-        return rest_weight, rest_layer_num
+
+    return rest_weight, rest_layer_num
 
 def balance_weights_in_layer_list(layer_info) -> None:
     """
@@ -104,7 +105,7 @@ def balance_weights_in_layer_list(layer_info) -> None:
     weight_sum, layer_counter = count_weights_in_layer_list(layer_info)
     rest_weight = 1.0 - weight_sum
     rest_layer_num = layer_info.get("layers_number") - layer_counter
-    # 图层数为负数，抛出异常
+    # TODO :图层数为负数，抛出异常
     update_layers_weight(rest_weight, rest_layer_num, layer_info)
 
 
@@ -155,9 +156,9 @@ def register_subdir_list_weight(layer_info) -> None:
             subdir_info = layer_info.get(subdir)
             # 登记子文件夹中的图层权重
             register_layer_list_weight(subdir_info)
-            sub_dir_weight = sum(subdir_info.get("layer_weights_list"))
+            sub_dir_weight = round(sum(subdir_info.get("layer_weights_list")), 6)
             # 登记该子文件夹的权重
-            layer_info["sub_dir_weights_list"].append(sub_dir_weight)
+            layer_info["subdir_weights_list"].append(sub_dir_weight)
 
 
 def pre_operation(layer_info_dict) -> None:
@@ -183,4 +184,5 @@ if __name__ == "__main__":
     layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo.json"))
     for info_item in layers_info:
         pre_operation(info_item)
-    fop.save_json(layers_info, ENV.INFO_PATH.joinpath("layersInfo_update.json"))
+
+    fop.save_json(ENV.INFO_PATH,"layersInfo_update.json", layers_info)

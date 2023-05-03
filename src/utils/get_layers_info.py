@@ -81,7 +81,7 @@ def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict, total_Sup
         layer_name, percentage, amount = get_purename_and_weight(layer)
         # convert amount to Proportions
         if percentage == None and amount != None:
-            percentage = round(amount / total_Supply, 4)
+            percentage = round(amount / total_Supply, 6)
             # 这里加上异常处理 百分比不能超过100%
         layer_info = {
             "path": str(file_path.joinpath(layer).resolve()),
@@ -120,7 +120,7 @@ def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict, total_Supply) -
             layer_name, percentage, amount = get_purename_and_weight(layer.name)
             # convert amount to Proportions
             if percentage == None and amount != None:
-                percentage = round(amount / total_Supply, 4)
+                percentage = round(amount / total_Supply, 6)
                 # 这里加上异常处理 百分比不能超过100%
             sublayer_info_dict.update({layer_name: {
                 "path": str(layer),
