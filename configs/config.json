@@ -75,36 +75,36 @@
                 {
                     "name": "Eggshell",
                     "isBeaconLayer": false,
-                    "beacon_layer": "Holder",
+                    "beaconLayer": "Holder",
                     "hideInMetadata": false
                 },
                 {
                     "name": "Pattern",
-                    "beacon_layer": "Holder",
+                    "beaconLayer": "Holder",
                     "isBeaconLayer": false,
                     "hideInMetadata": false
                 },
                 {
                     "name": "Stroke",
-                    "beacon_layer": "Holder",
-                    "isBeaconLayer": true,
+                    "beaconLayer": "Holder",
+                    "isBeaconLayer": false,
                     "hideInMetadata": false
                 },
                 {
                     "name": "Halo",
-                    "beacon_layer": "Holder",
+                    "beaconLayer": "Holder",
                     "isBeaconLayer": false,
                     "hideInMetadata": false
                 },
                 {
                     "name": "Music_Effect",
-                    "beacon_layer": "Holder",
+                    "beaconLayer": "Holder",
                     "isBeaconLayer": false,
                     "hideInMetadata": false
                 },
                 {
                     "name": "Base",
-                    "beacon_layer": "Holder",
+                    "beaconLayer": "Holder",
                     "isBeaconLayer": false,
                     "hideInMetadata": false
                 }

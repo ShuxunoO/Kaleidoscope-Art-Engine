@@ -42,8 +42,14 @@ def make_layer_list_recipe(layer_info) -> dict:
     """
     layer_list = layer_info.get("layer_list")
     layer_list_recipe = {}
-    layer_list_recipe["layer_weight_info_list"] = []
 
+    if "isBeaconLayer" in layer_info.keys():
+        layer_list_recipe["isBeaconLayer"] = layer_info.get("isBeaconLayer")
+
+    if "beaconLayer" in layer_info.keys():
+        layer_list_recipe["beaconLayer"] = layer_info.get("beaconLayer")
+
+    layer_list_recipe["layer_weight_info_list"] = []
     # List of layers with percentage in their names
     layer_with_percentage = []
     layer_percentage_list = []
@@ -86,6 +92,13 @@ def make_subdir_list_recipe(layer_info):
     """
     sub_dir_list = layer_info.get("sub_dir_list")
     sub_dir_list_recipe = {}
+    
+    if "isBeaconLayer" in layer_info.keys():
+        sub_dir_list_recipe["isBeaconLayer"] = layer_info.get("isBeaconLayer")
+        
+    if "beaconLayer" in layer_info.keys():
+        sub_dir_list_recipe["beaconLayer"] = layer_info.get("beaconLayer")
+
     sub_dir_list_recipe.update({"sub_dir_info": [layer_info.get("sub_dir_list"), layer_info.get("subdir_weights_list")]})
     for sub_dir in sub_dir_list:
         sub_dir_info = layer_info.get(sub_dir)
