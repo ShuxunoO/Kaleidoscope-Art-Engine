@@ -1,5 +1,5 @@
 {
-    "namePrefix": "BanaCat Eggs",
+    "namePrefix": "Music Eggs",
     "description": "xxx",
     "baseUri": "ipfs:/xxx",
     "format": {
@@ -60,8 +60,7 @@
             "totalSupply": 10000,
             "specificCombination": {
             },
-            "do_Balance": true,
-            "startID": 1,
+            "startID": 0,
             "layersOrder":
             [
                 {

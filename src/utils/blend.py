@@ -1,4 +1,3 @@
-import copy
 import hashlib
 import random
 import sys
@@ -37,9 +36,15 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
     layers = layer_config["layersOrder"]
     # 构建一个属性列表
     while counter < total_supply and repetition_num < REPETITION_NUM_LIMIT:
-        attr_dict = set_metadata(layers_config, layers_recipe)
-        attr_list_template = get_attribute_list_template(layers)
-        attr_list = get_attribute_list(attr_dict, attr_list_template)
+        attr_dict = set_metadata(layers, layers_recipe)
+        if attr_dict is None:
+            repetition_num += 1
+            print("\n##########--Empty Layer Exception--##########\n")
+            continue
+
+        attr_list = get_attribute_list(layers)
+        update_attribute_list(attr_dict, attr_list)
+
         # 判断是否重复
         attr_DNA = hashlib.sha1(str(attr_list).encode('utf-8')).hexdigest()
         if attr_DNA in DNA_set:
@@ -48,9 +53,12 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
             continue
         else:
             # 不重复的话更新数值（返回一个图层对象的列表）
-            layer_path_list = update_layers_recipe(layers_recipe, attr_dict)
+            layer_path_list = update_layers_recipe(layers, layers_recipe, attr_dict)
+
+            # fop.save_json(ENV.INFO_PATH, f"layer_path_list{token_ID}.json", layer_path_list)
+
             # 混合图像
-            blend_img(layer_path_list, token_ID)
+            # blend_img(layer_path_list, token_ID)
             # 组装metada
             generate_metadata(CONFIG, attr_list, attr_DNA, token_ID)
             # 把dna 添加到 dna_set
@@ -58,21 +66,29 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
             DNA_set.add(attr_DNA)
             token_ID += 1
             counter += 1
+    if counter < total_supply:
+        print("**********The number of layers is insufficient, please check the layer settings.**********")
+    else:
+        print("**********Done!**********")
 
-def set_metadata(layers_config, layers_recipe):
+
+def set_metadata(layers_order, layers_recipe):
     # 定义属性字典
     attributes_dict = {}
 
     # 先添加信标层的属性
-    for layer in layers_config:
+    for layer in layers_order:
         layer_name = layer["name"]
         layer_info = layers_recipe[layer_name]
         if layer_info["isBeaconLayer"] == True:
             # 将信息填入属性字典
-            load_layer_info(layer_name, layer_info, attributes_dict)
+            target_layer = load_layer_info(layer_name, layer_info, attributes_dict)
+            # 如果目标图层为空，则触发空图层异常
+            if target_layer is None:
+                return None
             
     # 再添加非信标层的属性
-    for layer in layers_config:
+    for layer in layers_order:
         layer_name = layer["name"]
         layer_info = layers_recipe[layer_name]
         if layer_info["isBeaconLayer"] == False:
@@ -80,11 +96,15 @@ def set_metadata(layers_config, layers_recipe):
             if beacon_layer is not None:
                 # 将信息填入属性字典
                 beacon = attributes_dict[beacon_layer]["beacon"]
-                load_layer_info(layer_name, layer_info, attributes_dict, beacon)
+                target_layer = load_layer_info(layer_name, layer_info, attributes_dict, beacon)
+                if target_layer is None:
+                    return None
             else:
                 # 获取自由层属性
-                load_layer_info(layer_name, layer_info, attributes_dict)
-
+                target_layer = load_layer_info(layer_name, layer_info, attributes_dict)
+                if target_layer is None:
+                    return None
+                
     return attributes_dict
 
 def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None):
@@ -96,6 +116,7 @@ def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None):
         "index" : index,
         "target_layer" : target_layer
     }})
+    return target_layer
 
 
 def get_trait_value(layer_info, beacon=None):
@@ -121,7 +142,7 @@ def get_beaconLayer_value(layer_info):
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
     return beacon, index, target_layer
 
-def get_subLayer_value(layer_info, beacon):
+def get_subLayer_value(layer_info, beacon=None):
 
     layer_weight_info_list = layer_info[beacon].get("layer_weight_info_list")
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
@@ -135,12 +156,21 @@ def get_freeLayer_value(layer_info):
 
 def random_choose_a_layer(weight_list):
 
-    # 如果用数量代表权重的图层列表为空，则只选择概率权重的图层列表
-    if len(weight_list[2]) == 0:
+    # 0 代表用百分比代表权重的图层列表以及各自概率权重
+    # 1 代表用数量代表权重的图层列表以及各自数量权重
+    if len(weight_list[0]) == 0:
+        # 如果两种图层都没有，那么返回None
+        if len(weight_list[2]) == 0:
+            # TODO ：抛出异常
+            return None, None
+        else:
+            result = 1
+    # 在存在用百分比表示权重的图层的情况下，如果没有用数量表示权重的图层，那么直接返回用百分比表示权重的图层
+    elif len(weight_list[2]) == 0:
         result = 0
+
+    # 如果两种图层都有，那么随机选择一种
     else:
-        # 0 代表用百分比代表权重的图层列表以及各自概率权重
-        # 1 代表用数量代表权重的图层列表以及各自数量权重 
         # 3:7的比例可以保证用数量表示权重的图层会被有限选择，防止数量权重的图层到结束还有剩余的情况
         result = random.choices([0, 1], [0.3, 0.7])[0]
 
@@ -156,7 +186,7 @@ def random_choose_a_layer(weight_list):
         prob_list = weight_list[1]
         return None, random.choices(layer_list, prob_list)[0]
 
-def get_attribute_list_template(layers):
+def get_attribute_list(layers):
     attribute_list = []
     for layer in layers:
         attribute_list.append({
@@ -165,8 +195,8 @@ def get_attribute_list_template(layers):
         })
     return attribute_list
 
-def get_attribute_list(attr_dict, attr_list_template) -> None:
-    for layer_item in attr_list_template:
+def update_attribute_list(attr_dict, attr_list) -> None:
+    for layer_item in attr_list:
         layer_name = layer_item["trait_type"]
         layer_info = attr_dict[layer_name]
         layer_item["value"] = layer_info["target_layer"]
@@ -198,6 +228,14 @@ def update_layers_recipe(layers, layers_recipe, attr_dict) -> None:
                     layer_info["layer_weight_info_list"][3].pop(index)
                 # 将图层路径加入列表
                 layer_path_list.append(layer_info[target_layer])
+        else:
+            if beacon is not None:
+                layer_info = layers_recipe[layer_name][beacon]
+                layer_path_list.append(layer_info[target_layer])
+            else:
+                layer_info = layers_recipe[layer_name]
+                # 将图层路径加入列表
+                layer_path_list.append(layer_info[target_layer])
     return layer_path_list
 
 
@@ -227,8 +265,10 @@ def blend_img(layer_obj_list, token_ID):
 
 if __name__ == "__main__":
     pre_processing.process()
+
     CONFIG = fop.load_json(ENV.CONFIG_PATH)
-    layers_config = CONFIG["layerConfigurations"][0]["layersOrder"]
+    layers_config = CONFIG["layerConfigurations"]
     layersInfo_recipe = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_recipe.json"))
-    metadata_dict = set_metadata(layers_config, layersInfo_recipe[0])
-    fop.save_json(ENV.INFO_PATH, ENV.INFO_PATH.joinpath("test_metadata_dict.json"), metadata_dict)
+    # metadata_dict = set_metadata(layers_config, layersInfo_recipe[0])
+    # fop.save_json(ENV.INFO_PATH, ENV.INFO_PATH.joinpath("test_metadata_dict.json"), metadata_dict)
+    setup_images(layers_config, layersInfo_recipe)
