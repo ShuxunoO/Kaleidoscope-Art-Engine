@@ -1,6 +1,5 @@
 import re
 import sys
-from pathlib import Path
 
 sys.path.append(".")
 import file_operations as fop

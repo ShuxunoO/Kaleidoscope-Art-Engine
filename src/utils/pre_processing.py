@@ -194,14 +194,14 @@ def process() -> None:
     # 读取图层信息
     CONFIG = fop.load_json(ENV.CONFIG_PATH)
     collection_info = []
-    for layer_config in tqdm(CONFIG["layerConfigurations"], desc="Getting config info", ncols=100, unit="config", ascii=True):
+    for layer_config in CONFIG["layerConfigurations"]:
         # 每一种配置的图层信息生成一个独立的字典文件
         layers_info_dict = {}
         totalSupply = layer_config["totalSupply"]
         layers_info_dict["totalSupply"] = totalSupply
         layers_info_dict["layers_info"] = {}
         # 循环遍历当前配置中的所有图层信息
-        for layer in tqdm(layer_config["layersOrder"], desc="Getting layers info", ncols=100, unit="layer", ascii=True):
+        for layer in layer_config["layersOrder"]:
             layers_info = get_info.get_layers_info(ENV.LAYER_PATH, layer, totalSupply)
             layers_info_dict["layers_info"].update(layers_info)
         collection_info.append(layers_info_dict)

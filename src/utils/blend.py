@@ -55,12 +55,12 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
             # 不重复的话更新数值（返回一个图层对象的列表）
             layer_path_list = update_layers_recipe(layers, layers_recipe, attr_dict)
 
-            # fop.save_json(ENV.INFO_PATH, f"layer_path_list{token_ID}.json", layer_path_list)
-
             # 混合图像
-            # blend_img(layer_path_list, token_ID)
+            blend_img(layer_path_list, token_ID)
+
             # 组装metada
             generate_metadata(CONFIG, attr_list, attr_DNA, token_ID)
+
             # 把dna 添加到 dna_set
             print(f"token_ID: {token_ID} NFT-DNA: {attr_DNA} ")
             DNA_set.add(attr_DNA)
@@ -171,8 +171,8 @@ def random_choose_a_layer(weight_list):
 
     # 如果两种图层都有，那么随机选择一种
     else:
-        # 3:7的比例可以保证用数量表示权重的图层会被有限选择，防止数量权重的图层到结束还有剩余的情况
-        result = random.choices([0, 1], [0.3, 0.7])[0]
+        # 2:8的比例可以保证用数量表示权重的图层会被有限选择，防止数量权重的图层到结束还有剩余的情况
+        result = random.choices([0, 1], [0.2, 0.8])[0]
 
     if result == 1:
         layer_list = weight_list[2]
@@ -259,6 +259,7 @@ def blend_img(layer_obj_list, token_ID):
     for layer in layer_obj_list[1:]:
         img = Image.open(layer).convert("RGBA")
         background.paste(img, (0, 0), img)
+    background = background.convert("RGB")
     path = ENV.IMAGES_PATH.joinpath(str(token_ID) + '.png')
     background.save(path)
 

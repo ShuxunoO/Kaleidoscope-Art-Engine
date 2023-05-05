@@ -57,7 +57,7 @@
     "processCount": 10,
     "layerConfigurations": [
         {
-            "totalSupply": 10000,
+            "totalSupply": 1000,
             "specificCombination": {
             },
             "startID": 0,

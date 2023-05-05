@@ -1,28 +1,11 @@
 
-import os
 import re
-import utils.file_io as fio
-from CONST_ENV import CONST_ENV as ENV
+import sys
+import os
 from tqdm import tqdm
-# TODO:
-# 1. 从文件中读取数据
-# 2. 遍历文件夹中的metada json文件，查看attributes中的"trait_type"
-# 3. 给属性编码，生成一个字典
-# 4. 统计每个trait 出现的图片编号与数量
-
-
-def get_iterable_file_list(path):
-    """以迭代器的形式返回文件夹中的文件名
-
-    Args:
-        path (str): 文件所在路径
-
-    Yields:
-        interable obj: 文件名
-    """
-    file_list = os.listdir(path)
-    for file in file_list:
-        yield file
+sys.path.append(".")
+from src.CONST_ENV import ENV_PATH as ENV
+from src.utils import file_operations as fio
 
 
 def get_file_list(path):
@@ -53,39 +36,41 @@ def get_prefix_filename_dictionary(path):
         prefix_filename_dict.update({file.split(".")[0]: file})
     return prefix_filename_dict
 
+def get_collection_base_info(metadata_demo):
+    collection_name = metadata_demo.get("name", None).split("#")[0]
+    collection_description = metadata_demo.get("description", None)
+    
+    return collection_name, collection_description
+    
 
-if __name__ == "__main__":
-
-    reference = fio.load_json(os.path.join(
-        ENV.INFO_PATH, "NFT_metadata_V2.json"))
-    ranking = "1"
-    target_collention = reference[ranking]
-
-    # 项目名称
-    NFT_name = target_collention["collection_name"]
-    metadata_path = os.path.join(ENV.DATASET_PATH, NFT_name, "metadata")
-    img_path = os.path.join(ENV.DATASET_PATH, NFT_name, "img")
-    metadata_list = get_file_list(metadata_path)
-    prefix_filename_dictionary = get_prefix_filename_dictionary(img_path)
-
+def analyze():
+    metadata_list = get_file_list(ENV.JSON_PATH)
+    prefix_filename_dictionary = get_prefix_filename_dictionary(ENV.IMAGES_PATH)
+    metadata_demo = fio.load_json(ENV.JSON_PATH.joinpath(metadata_list[0]))
+    collection_name, collection_description = get_collection_base_info(metadata_demo)
     dashboard = {}
+
     # NFT的总数量
     total_supply = len(metadata_list)
-    # NFT的项目描述
-    description = target_collention["contract_metadata"]["openSea"]["description"]
-
+    
     # 属性的编号
     serial_number = 0
 
     # 属性编号字典
     trait_number_dict = {}
     # 预制属性字典
-    dashboard["name"] = NFT_name
+    dashboard["name"] = collection_name
+
+    # NFT的总数量
     dashboard["total_supply"] = total_supply
-    dashboard["description"] = description
+
+    # NFT的项目描述
+    dashboard["description"] = collection_description
 
     # 属性总数
     dashboard["total_traits_count"] = 0
+
+    dashboard["rarity_dashboard"] = {}
 
     # 属性-编号字典
     dashboard["trait_number_dict"] = {}
@@ -97,8 +82,8 @@ if __name__ == "__main__":
     dashboard["trait_info"] = {}
 
 
-    for file in tqdm(metadata_list, desc=f"Analyzing{NFT_name}metadata", unit="file", total=total_supply, ncols=150, leave=True):
-        file_path = os.path.join(metadata_path, file)
+    for file in tqdm(metadata_list, desc=f"Analyzing{collection_name}metadata", unit="file", total=total_supply, ncols=150, leave=True):
+        file_path = ENV.JSON_PATH.joinpath(file)
         metadata_info = fio.load_json(file_path)
         attributes = metadata_info["attributes"]
 
@@ -134,12 +119,20 @@ if __name__ == "__main__":
     dashboard["total_traits_count"] = serial_number
     
     # 最后计算稀有度并将媒体列表排序
-    for key, value in dashboard["trait_info"].items():
-        for key, value in value.items():
-            value["rarity"] = value["trait_count"] / total_supply
+    for trait_type, trait_value in dashboard["trait_info"].items():
+        for layer_name, value in trait_value.items():
+            value["rarity"] = round(value["trait_count"] / total_supply, 6)
+            # 将稀有度加入到稀有度字典中
+            dashboard["rarity_dashboard"].update({layer_name: value["rarity"]})
             value["img_list"].sort(key=lambda l: int(re.findall('\d+', l)[0]))
+
+    # 将图层的稀有度按照升序排列
+    dashboard["rarity_dashboard"] = dict(sorted(dashboard["rarity_dashboard"].items(), key=lambda item: item[1]))
+    
     # 最后将属性字典保存到文件中
-    fio.save_json(os.path.join(ENV.DATASET_PATH, NFT_name), "Metadata_dashboard", dashboard)
+    fio.save_json(ENV.INFO_PATH, "Metadata_dashboard.json" , dashboard)
     print("Done!")
 
-    # fio.save_json(os.path.join(ENV.DATASET_PATH, NFT_name), "test", prefix_filename_dictionary)
+
+if __name__ == "__main__":
+    analyze()
