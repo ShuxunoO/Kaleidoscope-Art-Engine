@@ -70,6 +70,7 @@ def analyze():
     # 属性总数
     dashboard["total_traits_count"] = 0
 
+    # 稀有度字典
     dashboard["rarity_dashboard"] = {}
 
     # 属性-编号字典
@@ -82,7 +83,7 @@ def analyze():
     dashboard["trait_info"] = {}
 
 
-    for file in tqdm(metadata_list, desc=f"Analyzing{collection_name}metadata", unit="file", total=total_supply, ncols=150, leave=True):
+    for file in tqdm(metadata_list, desc=f"Analyzing {collection_name} metadata", unit="file", total=total_supply, ncols=150, leave=True):
         file_path = ENV.JSON_PATH.joinpath(file)
         metadata_info = fio.load_json(file_path)
         attributes = metadata_info["attributes"]
