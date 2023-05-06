@@ -72,7 +72,23 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
         print("**********Done!**********")
 
 
-def set_metadata(layers_order, layers_recipe):
+def set_metadata(layers_order, layers_recipe) -> dict:
+    """ randomly select attributes from each layer and return a attribute dictionary
+    if choose a empty layer, return None
+
+    Args:
+        layers_order (list): a list of layers' name from bottom to top
+        e.g. ["background", "body", "head", "eyes", "mouth" ...]
+        defined in config.json
+
+        layers_recipe (dict): a dictionary of layers' weight and attributes info
+
+    Returns:
+        dict : a dictionary of  the chosed attributes
+
+    """
+
+
     # 定义属性字典
     attributes_dict = {}
 

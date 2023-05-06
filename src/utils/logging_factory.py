@@ -1,25 +1,7 @@
 import logging
-
-def setup_logger(logger_name: str, log_file_path: str, level: int = logging.INFO) -> logging.Logger:
-    """
-    设置一个日志记录器。
-
-    @param logger_name: 日志记录器的名称
-    @param log_file: 日志输出文件的路径
-    @param level: 日志记录级别, 默认为logging.INFO
-    @return: 配置好的日志记录器对象
-    """
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(level)
-    handler = logging.FileHandler(log_file_path, encoding="UTF-8", mode = 'w')
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s : %(message)s")
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-    return logger
-
-
-
+import sys
+sys.path.append(".")
+from src.CONST_ENV import ENV_PATH as ENV
 
 class LoggerFactory:
     """定义了一个 LoggerFactory 类，
@@ -30,20 +12,25 @@ class LoggerFactory:
     def __init__(self, log_level=logging.INFO):
         self.log_level = log_level
 
-    def create_logger(self, logger_name):
+    def setup_logger(self, logger_name: str, log_file_path: str) -> logging.Logger:
         logger = logging.getLogger(logger_name)
         logger.setLevel(self.log_level)
 
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
         console_handler = logging.StreamHandler()
         console_handler.setLevel(self.log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
-        file_handler = logging.FileHandler(f"{logger_name}.log")
+        file_handler = logging.FileHandler(log_file_path, encoding="UTF-8", mode = 'a')
         file_handler.setLevel(self.log_level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
         return logger
+
+if __name__ == "__main__":
+    logf = LoggerFactory()
+    logger = logf.setup_logger("exceptions", "exceptions.log")
+    logger.info("test")

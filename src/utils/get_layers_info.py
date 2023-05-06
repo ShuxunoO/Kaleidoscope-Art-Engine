@@ -2,6 +2,13 @@ import re
 import sys
 import os
 from pathlib import Path
+sys.path.append(".")
+from src.CONST_ENV import ENV_PATH as ENV
+from src.utils.logging_factory import LoggerFactory
+from src.utils import exceptions as excp
+
+logf = LoggerFactory()
+logger = logf.setup_logger("exceptions", ENV.INFO_PATH.joinpath("exceptions.log"))
 
 def get_dirlist_and_filelist(file_path) -> tuple:
     """
@@ -38,6 +45,13 @@ def get_layers_info(base_path, layer_info, total_Supply) -> dict:
     # get the file list and subfolder list in the base path
     current_path = Path.joinpath(base_path, layer_info["name"])
     layer_list, dir_list = get_dirlist_and_filelist(current_path)
+
+    try:
+        if len(layer_list) == 0 and len(dir_list) == 0:
+            raise excp.NULL_File_Error(f"The file list and subfolder list in layer of  {layer_info['name']} are empty.")
+    except excp.NULL_File_Error as e:
+        logger.warning(f"{type(e).__name__}: {str(e)}")
+        sys.exit(1)
 
     # a dictionary to store the layers infomation in base path
     layerinfo_dict = {}
@@ -81,7 +95,15 @@ def get_layerinfo_in_currentdir(file_path, layer_list, layerinfo_dict, total_Sup
         # convert amount to Proportions
         if percentage == None and amount != None:
             percentage = round(amount / total_Supply, 6)
-            # 这里加上异常处理 百分比不能超过100%
+
+        # check the percentage
+            try:
+                if percentage > 1.0:
+                    raise excp.PercentageError(f"The percentage of {layer_name} is {percentage} and greater than 1.0.")
+            except excp.PercentageError as e:
+                logger.warning(f"{type(e).__name__}: {str(e)}")
+                sys.exit(1)
+
         layer_info = {
             "path": str(file_path.joinpath(layer).resolve()),
             "percentage": percentage,
@@ -120,7 +142,15 @@ def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict, total_Supply) -
             # convert amount to Proportions
             if percentage == None and amount != None:
                 percentage = round(amount / total_Supply, 6)
-                # 这里加上异常处理 百分比不能超过100%
+
+            # check the percentage
+            try:
+                if percentage > 1.0:
+                    raise excp.PercentageError(f"The percentage of {layer_name} is {percentage} and greater than 1.0.")
+            except excp.PercentageError as e:
+                logger.warning(f"{type(e).__name__}: {str(e)}")
+                sys.exit(1)
+
             sublayer_info_dict.update({layer_name: {
                 "path": str(layer),
                 "percentage": percentage,
@@ -184,3 +214,4 @@ def get_file_num(file_path) -> int:
     for root, dirs, files in os.walk(file_path):
         counter = counter + len(files)
     return counter
+
