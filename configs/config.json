@@ -54,10 +54,10 @@
     "multiVersionSettings": {
         "layerName": ""
     },
-    "processCount": 10,
+    "numOfWorkers": 8,
     "layerConfigurations": [
         {
-            "totalSupply": 1000,
+            "totalSupply": 2000,
             "specificCombination": {
             },
             "startID": 0,

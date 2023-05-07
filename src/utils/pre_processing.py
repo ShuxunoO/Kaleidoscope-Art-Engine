@@ -5,7 +5,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 sys.path.append(".")
-import file_operations as fop
+import file_operations as fio
 
 from src.CONST_ENV import ENV_PATH as ENV
 from src.utils import get_layers_info as get_info
@@ -192,7 +192,7 @@ def process() -> None:
     """
 
     # 读取图层信息
-    CONFIG = fop.load_json(ENV.CONFIG_PATH)
+    CONFIG = fio.load_json(ENV.CONFIG_PATH)
     collection_info = []
     for layer_config in CONFIG["layerConfigurations"]:
         # 每一种配置的图层信息生成一个独立的字典文件
@@ -205,18 +205,18 @@ def process() -> None:
             layers_info = get_info.get_layers_info(ENV.LAYER_PATH, layer, totalSupply)
             layers_info_dict["layers_info"].update(layers_info)
         collection_info.append(layers_info_dict)
-    fop.save_json(ENV.INFO_PATH,"layersInfo.json", collection_info)
+    fio.save_json(ENV.INFO_PATH,"layersInfo.json", collection_info)
 
     # 对图层信息进行均衡等预处理操作
-    layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo.json"))
+    layers_info = fio.load_json(ENV.INFO_PATH.joinpath("layersInfo.json"))
     for info_item in layers_info:
         pre_operation(info_item)
-    fop.save_json(ENV.INFO_PATH,"layersInfo_update.json", layers_info)
+    fio.save_json(ENV.INFO_PATH,"layersInfo_update.json", layers_info)
 
     # 生成图层信息的菜单信息
-    layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_update.json"))
+    layers_info = fio.load_json(ENV.INFO_PATH.joinpath("layersInfo_update.json"))
     layers_recipe = gen_recipe.generate_NFT_recipe(layers_info)
-    fop.save_json(ENV.INFO_PATH,"layersInfo_recipe.json", layers_recipe)
+    fio.save_json(ENV.INFO_PATH,"layersInfo_recipe.json", layers_recipe)
 
 if __name__ == "__main__":
     process()

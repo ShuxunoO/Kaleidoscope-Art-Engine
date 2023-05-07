@@ -1,11 +1,12 @@
 import hashlib
 import random
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
-
+import multiprocessing as mp
 sys.path.append(".")
-import file_operations as fop
+import file_operations as fio
 from PIL import Image
 
 from src.CONST_ENV import ENV_PATH as ENV
@@ -25,21 +26,24 @@ def setup_images(layer_configs, layers_info_json):
         layer_config = layer_configs[index]
         # 这里要重新加载进来
         layers_recipe = layers_info_json[index]
-        build_imgs_attributes(layer_config, layers_recipe,
+        
+        task_list = generate_collection_metaInfo(layer_config, layers_recipe,
                                 DNA_set, repetition_num)
+        generate_NFT_collection(task_list)
 
-def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
+def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num):
+    task_list = []
     total_supply = layer_config["totalSupply"]
     token_ID = layer_config["startID"]
     counter = 0
-    REPETITION_NUM_LIMIT = 20000
     layers = layer_config["layersOrder"]
+    REPETITION_NUM_LIMIT = 20000
     # 构建一个属性列表
     while counter < total_supply and repetition_num < REPETITION_NUM_LIMIT:
         attr_dict = set_metadata(layers, layers_recipe)
         if attr_dict is None:
             repetition_num += 1
-            print("\n##########--Empty Layer Exception--##########\n")
+            print("\n###############--Empty Layer Exception--###############\n")
             continue
 
         attr_list = get_attribute_list(layers)
@@ -49,27 +53,27 @@ def build_imgs_attributes(layer_config, layers_recipe, DNA_set, repetition_num):
         attr_DNA = hashlib.sha1(str(attr_list).encode('utf-8')).hexdigest()
         if attr_DNA in DNA_set:
             repetition_num += 1
-            print("\n**********Attribute Conflict**********\n")
+            print("\n***************Attribute Conflict***************\n")
             continue
+
         else:
             # 不重复的话更新数值（返回一个图层对象的列表）
             layer_path_list = update_layers_recipe(layers, layers_recipe, attr_dict)
 
-            # 混合图像
-            blend_img(layer_path_list, token_ID)
-
             # 组装metada
-            generate_metadata(CONFIG, attr_list, attr_DNA, token_ID)
+            metadata = generate_metadata(CONFIG, attr_list, attr_DNA, token_ID)
 
             # 把dna 添加到 dna_set
             print(f"token_ID: {token_ID} NFT-DNA: {attr_DNA} ")
             DNA_set.add(attr_DNA)
             token_ID += 1
             counter += 1
+
+            task_list.append((token_ID, metadata, layer_path_list))
     if counter < total_supply:
         print("**********The number of layers is insufficient, please check the layer settings.**********")
-    else:
-        print("**********Done!**********")
+    return task_list
+    
 
 
 def set_metadata(layers_order, layers_recipe) -> dict:
@@ -266,11 +270,20 @@ def generate_metadata(configs, attribute_list, dna, token_ID):
     "date":str(datetime.now()),
     "attributes":attribute_list,
     "poweredBy": "Kaleidoscope-Art-Engine"})
-    fop.save_json(ENV.JSON_PATH, f"{str(token_ID)}.json", metadata)
+    return metadata
+
+
+def generate_a_NFT(token_info):
+    token_ID, metadata, layer_path_list = token_info
+    # 混合图像
+    blend_a_img(layer_path_list, token_ID)
+    # 保存元数据
+    fio.save_json(ENV.JSON_PATH, f"{str(token_ID)}.json", metadata)
+    print(f"Token #{token_ID} Has Done!")
 
 
 # 合成图像
-def blend_img(layer_obj_list, token_ID):
+def blend_a_img(layer_obj_list, token_ID):
     background = Image.open(layer_obj_list[0]).convert("RGBA")
     for layer in layer_obj_list[1:]:
         img = Image.open(layer).convert("RGBA")
@@ -279,13 +292,22 @@ def blend_img(layer_obj_list, token_ID):
     path = ENV.IMAGES_PATH.joinpath(str(token_ID) + '.png')
     background.save(path)
 
+def generate_NFT_collection(task_list):
+
+    num_of_workers = CONFIG["numOfWorkers"]
+    # 使用多进程生成NFT
+    with mp.Pool(processes=num_of_workers) as p:
+        p.map(generate_a_NFT, task_list)
+
+    print("\n---------------  ALL Tokens Done, Congratulations! >(≧∇≦)/ ---------------\n")
+
 
 if __name__ == "__main__":
     pre_processing.process()
-
-    CONFIG = fop.load_json(ENV.CONFIG_PATH)
+    CONFIG = fio.load_json(ENV.CONFIG_PATH)
     layers_config = CONFIG["layerConfigurations"]
-    layersInfo_recipe = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_recipe.json"))
-    # metadata_dict = set_metadata(layers_config, layersInfo_recipe[0])
-    # fop.save_json(ENV.INFO_PATH, ENV.INFO_PATH.joinpath("test_metadata_dict.json"), metadata_dict)
+    layersInfo_recipe = fio.load_json(ENV.INFO_PATH.joinpath("layersInfo_recipe.json"))
+
+    start_time = time.time()
     setup_images(layers_config, layersInfo_recipe)
+    print(f"Setup Images Done! Time cost: {time.time() - start_time:.2f}s")

@@ -2,7 +2,7 @@ import re
 import sys
 
 sys.path.append(".")
-import file_operations as fop
+import file_operations as fio
 
 from src.CONST_ENV import ENV_PATH as ENV
 
@@ -132,6 +132,6 @@ def generate_NFT_recipe(layer_info_dict) -> dict:
 
 
 if __name__ == "__main__":
-    layers_info = fop.load_json(ENV.INFO_PATH.joinpath("layersInfo_update.json"))
+    layers_info = fio.load_json(ENV.INFO_PATH.joinpath("layersInfo_update.json"))
     layers_recipe = generate_NFT_recipe(layers_info)
-    fop.save_json(ENV.INFO_PATH,"layersInfo_recipe.json", layers_recipe)
+    fio.save_json(ENV.INFO_PATH,"layersInfo_recipe.json", layers_recipe)

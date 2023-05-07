@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-import utils.file_operations as fop
+import utils.file_operations as fio
 
 sys.path.append('..')
 from CONST_ENV import ENV_PATH as PATH
@@ -18,14 +18,14 @@ def update_metadata(CONFIG):
     file_list =  os.listdir(json_path)
     for file_item in tqdm(file_list, desc='Updating Metadata ',unit= "piece", postfix={'value': len(file_list)}):
         # 加载文件
-        json_file = fop.load_json(json_path.joinpath(file_item))
+        json_file = fio.load_json(json_path.joinpath(file_item))
         # 修改信息
         token_ID = str(json_file["tokenID"])
         json_file["name"] = CONFIG["namePrefix"] + " #" + token_ID
         json_file["description"] = CONFIG["description"]
         json_file["image"] = CONFIG["baseUri"] + "/" + token_ID + ".png"
         # 存储文件
-        fop.save_json(json_path, token_ID, json_file)
+        fio.save_json(json_path, token_ID, json_file)
     print("Done")
 
 def count_layer_distribution():
@@ -84,12 +84,12 @@ def modify_json_file(temp_json_name_list, file_list_shuffled, file_path):
         file_name = temp_json_name_list[index]
         new_ID = file_list_shuffled[index]
         # 取出json文件
-        json_file = fop.load_json(file_path.joinpath(file_name))
+        json_file = fio.load_json(file_path.joinpath(file_name))
         # 用正则表达式修改json数据
         json_file["name"] = re.sub(r"""\#[0-9]*""", "#" + str(new_ID), json_file["name"])
         json_file["image"] = re.sub(r"""/[0-9]*.png""", "/" + str(new_ID) + ".png", json_file["image"])
         json_file["tokenID"] = new_ID
         # 存储
-        fop.save_json(file_path, file_name.split(".")[0], json_file)
+        fio.save_json(file_path, file_name.split(".")[0], json_file)
 
 

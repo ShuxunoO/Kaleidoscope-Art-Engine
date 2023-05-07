@@ -143,13 +143,13 @@ def get_layerinfo_in_subdir(base_path, dir_list, layerinfo_dict, total_Supply) -
             if percentage == None and amount != None:
                 percentage = round(amount / total_Supply, 6)
 
-            # check the percentage
-            try:
-                if percentage > 1.0:
-                    raise excp.PercentageError(f"The percentage of {layer_name} is {percentage} and greater than 1.0.")
-            except excp.PercentageError as e:
-                logger.warning(f"{type(e).__name__}: {str(e)}")
-                sys.exit(1)
+                # check the percentage
+                try:
+                    if percentage > 1.0:
+                        raise excp.PercentageError(f"The percentage of {layer_name} is {percentage} and greater than 1.0.")
+                except excp.PercentageError as e:
+                    logger.warning(f"{type(e).__name__}: {str(e)}")
+                    sys.exit(1)
 
             sublayer_info_dict.update({layer_name: {
                 "path": str(layer),
