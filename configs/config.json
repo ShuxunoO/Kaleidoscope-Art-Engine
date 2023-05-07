@@ -2,6 +2,8 @@
     "namePrefix": "Music Eggs",
     "description": "xxx",
     "baseUri": "ipfs:/xxx",
+    "numOfWorkers": 6,
+    "goOnMaking": true,
     "format": {
         "width": 1024,
         "height": 1024,
@@ -54,10 +56,9 @@
     "multiVersionSettings": {
         "layerName": ""
     },
-    "numOfWorkers": 8,
     "layerConfigurations": [
         {
-            "totalSupply": 2000,
+            "totalSupply": 5000,
             "specificCombination": {
             },
             "startID": 0,

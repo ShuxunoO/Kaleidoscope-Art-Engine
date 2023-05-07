@@ -3,7 +3,6 @@ import random
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 import multiprocessing as mp
 sys.path.append(".")
 import file_operations as fio
@@ -35,7 +34,7 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
     task_list = []
     total_supply = layer_config["totalSupply"]
     token_ID = layer_config["startID"]
-    counter = 0
+    counter = 1
     layers = layer_config["layersOrder"]
     REPETITION_NUM_LIMIT = 20000
     # 构建一个属性列表
@@ -71,8 +70,10 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
 
             task_list.append((token_ID, metadata, layer_path_list))
     if counter < total_supply:
-        print("**********The number of layers is insufficient, please check the layer settings.**********")
-    return task_list
+        print("XXXXXXXXXXXXXXX  The number of layers is insufficient, please check the layer settings.  XXXXXXXXXXXXXXX")
+        
+    else:
+        return task_list
     
 
 
@@ -293,7 +294,7 @@ def blend_a_img(layer_obj_list, token_ID):
     background.save(path)
 
 def generate_NFT_collection(task_list):
-
+    CONFIG = fio.load_json(ENV.CONFIG_PATH)
     num_of_workers = CONFIG["numOfWorkers"]
     # 使用多进程生成NFT
     with mp.Pool(processes=num_of_workers) as p:
@@ -310,4 +311,4 @@ if __name__ == "__main__":
 
     start_time = time.time()
     setup_images(layers_config, layersInfo_recipe)
-    print(f"Setup Images Done! Time cost: {time.time() - start_time:.2f}s")
+    print(f"Time cost: {time.time() - start_time:.2f}s")
