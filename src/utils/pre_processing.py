@@ -2,14 +2,18 @@ import os
 import re
 import sys
 from pathlib import Path
-from tqdm import tqdm
 
 sys.path.append(".")
 import file_operations as fio
 
 from src.CONST_ENV import ENV_PATH as ENV
-from src.utils import get_layers_info as get_info
+from src.utils import exceptions as excp
 from src.utils import generate_layers_recipe as gen_recipe
+from src.utils import get_layers_info as get_info
+from src.utils.logging_factory import LoggerFactory
+
+logf = LoggerFactory()
+logger = logf.setup_logger("exceptions", ENV.INFO_PATH.joinpath("exceptions.log"))
 
 def count_weights_in_layer_list(layer_info) -> tuple:
     """count sum of weights in layer_list of the  layer_info.
@@ -107,9 +111,16 @@ def balance_weights_in_layer_list(layer_info) -> None:
 
     """
     weight_sum, layer_counter = count_weights_in_layer_list(layer_info)
+
+    try:
+        if weight_sum > 1.0:
+            raise excp.WeightSumException(f"The sum of weights in layer_list of {layer_info['name']} is greater than 1.0")
+    except excp.WeightSumException as e:
+        logger.warning(f"{type(e).__name__}: {str(e)}")
+        sys.exit(1)
+
     rest_weight = 1.0 - weight_sum
     rest_layer_num = layer_info.get("layers_number") - layer_counter
-    # TODO :图层数为负数，抛出异常
     update_layers_weight(rest_weight, rest_layer_num, layer_info)
 
 
@@ -121,6 +132,14 @@ def balance_weights_in_subdir_list(layer_info) -> None:
         layer_info (dict): the layer info of the subdir_list
     """
     weight_sum, layer_counter = count_weights_in_subdir_list(layer_info)
+
+    try:
+        if weight_sum > 1.0:
+            raise excp.WeightSumException(f"The sum of weights in subdir_list of {layer_info['name']} is greater than 1.0")
+    except excp.WeightSumException as e:
+        logger.warning(f"{type(e).__name__}: {str(e)}")
+        sys.exit(1)
+
     rest_weight = 1.0 - weight_sum
     rest_layer_num = layer_info.get("layers_number") - layer_counter
     # 图层数为负数，抛出异常

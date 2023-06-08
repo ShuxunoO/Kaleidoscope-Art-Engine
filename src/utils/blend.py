@@ -13,10 +13,11 @@ from src.utils import pre_processing
 
 
 # TODO：
-    # 1. 如果用数量代表权重的图层DNA没有碰撞，一定要记得去反向更新数量权重
+    
 
 
 def setup_images(layer_configs, layers_info_json):
+
     # 存放DNA 哈希值的集合
     DNA_set = set()
     # metadata 冲撞的次数
@@ -26,8 +27,7 @@ def setup_images(layer_configs, layers_info_json):
         # 这里要重新加载进来
         layers_recipe = layers_info_json[index]
         
-        task_list = generate_collection_metaInfo(layer_config, layers_recipe,
-                                DNA_set, repetition_num)
+        task_list = generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num)
         generate_NFT_collection(task_list)
 
 def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num):
@@ -93,7 +93,6 @@ def set_metadata(layers_order, layers_recipe) -> dict:
 
     """
 
-
     # 定义属性字典
     attributes_dict = {}
 
@@ -129,6 +128,17 @@ def set_metadata(layers_order, layers_recipe) -> dict:
     return attributes_dict
 
 def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None):
+    """load layer info into attributes_dict
+
+    Args:
+        layer_name (str): layer's name
+        layer_info (dict): layer's info dict
+        attributes_dict (dict): attributes dict to store layer info
+        beacon (str, optional): a beacon to guide the which subdir to chose. Defaults to None.
+
+    Returns:
+        str: the layer be chosen
+    """
     # 获取从属子层属性
     beacon, index, target_layer = get_trait_value(layer_info, beacon)
     attributes_dict.update(
