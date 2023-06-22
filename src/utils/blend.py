@@ -1,9 +1,10 @@
 import hashlib
+import multiprocessing as mp
 import random
 import sys
 import time
 from datetime import datetime
-import multiprocessing as mp
+
 sys.path.append(".")
 import file_operations as fio
 from PIL import Image
@@ -12,25 +13,46 @@ from src.CONST_ENV import ENV_PATH as ENV
 from src.utils import pre_processing
 
 
-# TODO：
+def setup_images(layer_configs, layers_info_json) -> None:
+    """
+    An entry function that starts creating NFT media after reading configuration information from here.
     
-
-
-def setup_images(layer_configs, layers_info_json):
+    Args:
+        layer_configs (list): a list of layer's config defined in config.json
+        layers_info_json (list): a list of layer's weight info stored in layersInfo_recipe.json
+        
+    Returns:
+        None
+    """
 
     # 存放DNA 哈希值的集合
     DNA_set = set()
     # metadata 冲撞的次数
     repetition_num = 0
     for index in range(len(layer_configs)):
+        # 获取图层配置信息, 图层配置信息和图层菜单信息是一一对应的
         layer_config = layer_configs[index]
-        # 这里要重新加载进来
         layers_recipe = layers_info_json[index]
-        
+        # 构建合成NFT用的任务列表
         task_list = generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num)
         generate_NFT_collection(task_list)
 
-def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num):
+def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num) -> list:
+    """
+    Create a metadata list to guide the subsequent synthesis of NFTs,
+    where each item in the list contains a combination of NFT components.
+
+    Args:
+        layer_config (dict): a layer's config defined in config.json
+        layers_recipe (dict): a layer's info defined in layersInfo_recipe.json
+        DNA_set (set): a set of DNA hash value, used to check whether the DNA is repeated
+        repetition_num (int): the number of repetition,
+        if the number of repetition exceeds the limit, the program will stop
+
+    Returns:
+        list: a list of tasks for creating NFT media
+
+    """
     task_list = []
     total_supply = layer_config["totalSupply"]
     token_ID = layer_config["startID"]
@@ -39,13 +61,14 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
     REPETITION_NUM_LIMIT = 20000
     # 构建一个属性列表
     while counter < total_supply and repetition_num < REPETITION_NUM_LIMIT:
+        # 创建单个NFT的属性字典， 包含随机选择出来的信标层和非信标层属性
         attr_dict = set_metadata(layers, layers_recipe)
         if attr_dict is None:
             repetition_num += 1
             print("\n###############--Empty Layer Exception--###############\n")
             continue
-
-        attr_list = get_attribute_list(layers)
+        # 创建一个属性列表模板，用于填充之前随机选择出来的属性
+        attr_list = set_attribute_list(layers)
         update_attribute_list(attr_dict, attr_list)
 
         # 判断是否重复
@@ -76,16 +99,13 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
         return task_list
     
 
-
 def set_metadata(layers_order, layers_recipe) -> dict:
     """ randomly select attributes from each layer and return a attribute dictionary
     if choose a empty layer, return None
 
     Args:
         layers_order (list): a list of layers' name from bottom to top
-        e.g. ["background", "body", "head", "eyes", "mouth" ...]
-        defined in config.json
-
+        e.g. ["background", "body", "head", "eyes", "mouth" ...] defined in config.json
         layers_recipe (dict): a dictionary of layers' weight and attributes info
 
     Returns:
@@ -127,7 +147,7 @@ def set_metadata(layers_order, layers_recipe) -> dict:
                 
     return attributes_dict
 
-def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None):
+def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None) -> str:
     """load layer info into attributes_dict
 
     Args:
@@ -166,9 +186,13 @@ def get_trait_value(layer_info, beacon=None):
 
 
 def get_beaconLayer_value(layer_info):
+    # 待选择的子目录列表
     subdir_list = layer_info["sub_dir_info"][0]
+    # 待选择的子目录概率列表
     probabilities_list = layer_info["sub_dir_info"][1]
+    # 按照每个子目录对应的概率选择一个子文件夹作为信标使用
     beacon = random.choices(subdir_list, probabilities_list)[0]
+    # 从信标层的子目录中随机选择一个图层
     layer_weight_info_list = layer_info[beacon].get("layer_weight_info_list")
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
     return beacon, index, target_layer
@@ -185,7 +209,40 @@ def get_freeLayer_value(layer_info):
     return None, index, target_layer
 
 
-def random_choose_a_layer(weight_list):
+def random_choose_a_layer(weight_list) -> tuple:
+    """
+    Select a layer randomly according to the weight list.
+
+    Args:
+        weight_list (list): a list of layer's name and layer's weight info,
+        This is a two-dimensional list， 
+        where weight_list[0] represents the subfolder list (beacon list)；
+        weight_list[1]: probability of each subfolder being selected；
+        weight_list[2]: sub-layer list (sub-layer and sub-folder lists will not appear at the same time)；
+        and weight_list[3]: probability of selecting the sub-folder list.
+        e.g. 
+            [
+                [subfolder1, subfolder2, subfolder3,],
+                [0.1, 0.2, 0.7],
+                [],
+                []
+            ]
+
+            or
+
+            [
+                [],
+                [],
+                [layer1, layer2, layer3, layer4, layer5],
+                [0.1, 0.2, 0.3, 0.3, 0.1]
+            ]
+        defined in layersInfo_recipe.json
+
+    Returns:
+        int: the index of the chosen layer
+        str: the name of the chosen layer
+
+    """
 
     # 0 代表用百分比代表权重的图层列表以及各自概率权重
     # 1 代表用数量代表权重的图层列表以及各自数量权重
@@ -199,7 +256,7 @@ def random_choose_a_layer(weight_list):
     # 在存在用百分比表示权重的图层的情况下，如果没有用数量表示权重的图层，那么直接返回用百分比表示权重的图层
     elif len(weight_list[2]) == 0:
         result = 0
-
+    
     # 如果两种图层都有，那么随机选择一种
     else:
         # 2:8的比例可以保证用数量表示权重的图层会被有限选择，防止数量权重的图层到结束还有剩余的情况
@@ -211,13 +268,48 @@ def random_choose_a_layer(weight_list):
         index = random.choice(list(range(len(layer_list))))
         # 将索引一并返回是为了方便后续更新数量权重
         return index, layer_list[index]
-
     else:
         layer_list = weight_list[0]
         prob_list = weight_list[1]
         return None, random.choices(layer_list, prob_list)[0]
 
-def get_attribute_list(layers):
+def set_attribute_list(layers) -> list:
+    """
+    Set the attribute list template according to the layers defined in config.json
+
+    Args:
+        layers (list): a list of layers defined in config.json 's keyword "layersOrder"
+        
+    Returns:
+        list: a list of layers containing the layer's trait_type and layer's it's value( default value is "" )),
+        e.g.
+            [
+                {
+                    "trait_type": "Earring",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Background",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Fur",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Clothes",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Mouth",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Eyes",
+                    "value": ""
+                }
+        ]
+    """
     attribute_list = []
     for layer in layers:
         attribute_list.append({
@@ -227,6 +319,17 @@ def get_attribute_list(layers):
     return attribute_list
 
 def update_attribute_list(attr_dict, attr_list) -> None:
+    """
+    Update the attribute list according to the attr_dict
+
+    Args:
+        attr_dict (dict): a dict of layers' attribute info dict which stores the redomly chosen layer's info,
+        attr_list (list): a list of layers template to be updated
+
+    Returns:
+        None
+        
+    """
     for layer_item in attr_list:
         layer_name = layer_item["trait_type"]
         layer_info = attr_dict[layer_name]
