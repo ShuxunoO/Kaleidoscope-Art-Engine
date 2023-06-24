@@ -29,12 +29,17 @@ def setup_images(layer_configs, layers_info_json) -> None:
     DNA_set = set()
     # metadata 冲撞的次数
     repetition_num = 0
-    for index in range(len(layer_configs)):
-        # 获取图层配置信息, 图层配置信息和图层菜单信息是一一对应的
-        layer_config = layer_configs[index]
-        layers_recipe = layers_info_json[index]
+    # 获取图层配置信息, 图层配置信息和图层菜单信息是一一对应的
+    config_index = 0
+    for layer_config, layers_recipe in zip(layer_configs, layers_info_json):
         # 构建合成NFT用的任务列表
         task_list = generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num)
+        
+        # 将临时结果存一下
+        fio.save_json(ENV.INFO_PATH.joinpath(f"task_list_{config_index}.json"), task_list)
+        config_index += 1
+        
+        # 根据任务列表合成NFT
         generate_NFT_collection(task_list)
 
 def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetition_num) -> list:
@@ -58,7 +63,8 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
     token_ID = layer_config["startID"]
     counter = 1
     layers = layer_config["layersOrder"]
-    REPETITION_NUM_LIMIT = 20000
+    # 重复次数上限 = 总供应量 * 5
+    REPETITION_NUM_LIMIT = layer_config["totalSupply"] * 5
     # 构建一个属性列表
     while counter < total_supply and repetition_num < REPETITION_NUM_LIMIT:
         # 创建单个NFT的属性字典， 包含随机选择出来的信标层和非信标层属性
@@ -69,6 +75,8 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
             continue
         # 创建一个属性列表模板，用于填充之前随机选择出来的属性
         attr_list = set_attribute_list(layers)
+
+        # 将选择出来的图层组合填充到属性列表模板中
         update_attribute_list(attr_dict, attr_list)
 
         # 判断是否重复
@@ -77,7 +85,6 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
             repetition_num += 1
             print("\n***************Attribute Conflict***************\n")
             continue
-
         else:
             # 不重复的话更新数值（返回一个图层对象的列表）
             layer_path_list = update_layers_recipe(layers, layers_recipe, attr_dict)
@@ -92,6 +99,7 @@ def generate_collection_metaInfo(layer_config, layers_recipe, DNA_set, repetitio
             counter += 1
 
             task_list.append((token_ID, metadata, layer_path_list))
+    # TODO: 这里让用户决定是否进行后续的合成
     if counter < total_supply:
         print("XXXXXXXXXXXXXXX  The number of layers is insufficient, please check the layer settings.  XXXXXXXXXXXXXXX")
         
@@ -170,7 +178,18 @@ def load_layer_info(layer_name, layer_info, attributes_dict, beacon=None) -> str
     return target_layer
 
 
-def get_trait_value(layer_info, beacon=None):
+def get_trait_value(layer_info, beacon=None) -> tuple:
+    """
+    get the value of trait from layer_info according to the beacon
+    layer_info is defined in layersInfo_recipe.json
+
+    Args:
+        layer_info (dict): layer's info dict
+        beacon (str, optional): layer's beacon to guid which layer to choose from. Defaults to None.
+
+    Returns:
+        tuple: (beacon, index, target_layer)
+    """
 
     # 信标层
     if layer_info["isBeaconLayer"] == True:
@@ -185,7 +204,19 @@ def get_trait_value(layer_info, beacon=None):
         return get_freeLayer_value(layer_info)
 
 
-def get_beaconLayer_value(layer_info):
+def get_beaconLayer_value(layer_info) -> tuple:
+    """
+    get the value of trait from layer_info dict according to the beacon
+    layer_info is defined in layersInfo_recipe.json
+
+    Args:
+        layer_info (dict): layer's info dict
+
+    Returns:
+        tuple: (beacon name, layer's index, target_layer)
+        such as ("background", 0, "background_0.png")
+    """
+
     # 待选择的子目录列表
     subdir_list = layer_info["sub_dir_info"][0]
     # 待选择的子目录概率列表
@@ -197,13 +228,36 @@ def get_beaconLayer_value(layer_info):
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
     return beacon, index, target_layer
 
-def get_subLayer_value(layer_info, beacon=None):
+def get_subLayer_value(layer_info, beacon=None) -> tuple:
+    """
+    get the value of trait from layer_info dict according to the beacon
+    layer_info is defined in layersInfo_recipe.json
 
+    Args:
+        layer_info (dict): layer's info dict
+        beacon (str, optional): a beacon guides which sublayer folder to choose from. Defaults to None.
+
+    Returns:
+        tuple:  (beacon name is None, layer's index, target_layer)
+    """
     layer_weight_info_list = layer_info[beacon].get("layer_weight_info_list")
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
     return beacon, index, target_layer
 
-def get_freeLayer_value(layer_info):
+def get_freeLayer_value(layer_info) -> tuple:
+    """
+    get the value of trait from layer_info dict according to the beacon
+    layer_info is defined in layersInfo_recipe.json
+    It is worth noting that: the free layer has no beacon, does not contain subfolders, 
+    does not guide the synthesis of other layers, nor is it guided by other layers to synthesize.
+    All layer names are placed in a list.
+
+    Args:
+        layer_info (dict): layer's info dict
+
+    Returns:
+        tuple: (beacon name is None, layer's index, target_layer)
+    """
     layer_weight_info_list = layer_info.get("layer_weight_info_list")
     index, target_layer = random_choose_a_layer(layer_weight_info_list)
     return None, index, target_layer
@@ -265,9 +319,9 @@ def random_choose_a_layer(weight_list) -> tuple:
     if result == 1:
         layer_list = weight_list[2]
         # 随机选择一个图层的索引
-        index = random.choice(list(range(len(layer_list))))
+        selected_layer = random.choice(list(enumerate(layer_list)))
         # 将索引一并返回是为了方便后续更新数量权重
-        return index, layer_list[index]
+        return selected_layer[0], selected_layer[1]
     else:
         layer_list = weight_list[0]
         prob_list = weight_list[1]
@@ -335,7 +389,20 @@ def update_attribute_list(attr_dict, attr_list) -> None:
         layer_info = attr_dict[layer_name]
         layer_item["value"] = layer_info["target_layer"]
 
-def update_layers_recipe(layers, layers_recipe, attr_dict) -> None:
+def update_layers_recipe(layers, layers_recipe, attr_dict) -> list:
+    """
+    Update the layers_recipe according to the attr_dict.
+    If the layer represents weight with a quantity, then subtract one from that quantity and 
+    if the layer's weight is 0, then delete the layer from the layers_recipe
+
+    Args:
+        layers (list): a list of layers defined in config.json 's keyword "layersOrder"
+        layers_recipe (dict): a dict of layers' recipe defined in layersInfo_recipe.json
+        attr_dict (dict): a dict of layers' attribute info dict which stores the redomly chosen layer's info
+
+    Returns:
+        list: a list of layers' path which is used to generate the final image
+    """
     layer_path_list = []
     for layer in layers:
         layer_name = layer["name"]
@@ -343,25 +410,31 @@ def update_layers_recipe(layers, layers_recipe, attr_dict) -> None:
         beacon = attr_info["beacon"]
         index = attr_info["index"]
         target_layer = attr_info["target_layer"]
+        # index不为None代表是用数量代表示权重的图层
         if index is not None:
             if beacon is not None:
                 layer_info = layers_recipe[layer_name][beacon]
                 # 更新数量权重
                 layer_info["layer_weight_info_list"][3][index] -= 1
+                # 如果数量权重为0，那么将该图层从列表中删除
                 if layer_info["layer_weight_info_list"][3][index] == 0:
                     layer_info["layer_weight_info_list"][2].pop(index)
                     layer_info["layer_weight_info_list"][3].pop(index)
                 # 将图层路径加入列表
                 layer_path_list.append(layer_info[target_layer])
             else:
+                # 如果没有beacon则代表自由图层，那么直接从图层列表中选择
                 layer_info = layers_recipe[layer_name]
                 # 更新数量权重
                 layer_info["layer_weight_info_list"][3][index] -= 1
+                # 如果数量权重为0，那么将该图层从列表中删除
                 if layer_info["layer_weight_info_list"][3][index] == 0:
                     layer_info["layer_weight_info_list"][2].pop(index)
                     layer_info["layer_weight_info_list"][3].pop(index)
                 # 将图层路径加入列表
                 layer_path_list.append(layer_info[target_layer])
+        
+        # index为None代表是用百分比代表示权重的图层
         else:
             if beacon is not None:
                 layer_info = layers_recipe[layer_name][beacon]
@@ -374,7 +447,19 @@ def update_layers_recipe(layers, layers_recipe, attr_dict) -> None:
 
 
 # 创建源数据
-def generate_metadata(configs, attribute_list, dna, token_ID):
+def generate_metadata(configs, attribute_list, dna, token_ID) -> dict:
+    """
+    Generate the metadata of the NFT
+
+    Args:
+        configs (dict): layer's config info defined in config.json
+        attribute_list (list): a list of layers' attribute info dict which stores the redomly chosen layer's info
+        dna (_type_): sha256 hash value of the attribute_list
+        token_ID (int): the token ID of the NFT
+
+    Returns:
+        dict: a dict of the NFT's metadata
+    """
     metadata = {}
     metadata.update({"name": configs["namePrefix"] + " #" + str(token_ID),
     "description": configs["description"],
@@ -386,8 +471,13 @@ def generate_metadata(configs, attribute_list, dna, token_ID):
     "poweredBy": "Kaleidoscope-Art-Engine"})
     return metadata
 
+def generate_a_NFT(token_info) -> None:
+    """
+    Generate a NFT, including blending the layers, saving the metadata and saving the NFT image
 
-def generate_a_NFT(token_info):
+    Args:
+        token_info (tuple): a tuple of token's info, including token_ID, metadata and layer_path_list
+    """
     token_ID, metadata, layer_path_list = token_info
     # 混合图像
     blend_a_img(layer_path_list, token_ID)
@@ -397,7 +487,17 @@ def generate_a_NFT(token_info):
 
 
 # 合成图像
-def blend_a_img(layer_obj_list, token_ID):
+def blend_a_img(layer_obj_list, token_ID) -> None:
+    """
+    Blend the layers to generate the final image
+
+    Args:
+        layer_obj_list (list): a list of layers' path which is used to generate the final image
+        token_ID (int): the token ID of the NFT
+
+    Returns:
+        None
+    """
     background = Image.open(layer_obj_list[0]).convert("RGBA")
     for layer in layer_obj_list[1:]:
         img = Image.open(layer).convert("RGBA")
@@ -406,7 +506,16 @@ def blend_a_img(layer_obj_list, token_ID):
     path = ENV.IMAGES_PATH.joinpath(str(token_ID) + '.png')
     background.save(path)
 
-def generate_NFT_collection(task_list):
+def generate_NFT_collection(task_list) -> None:
+    """
+    Generate NFT according to the task list
+
+    Args:
+        task_list (list): a list of token's info, including token_ID, metadata and layer_path_list
+
+    Returns:
+    
+    """
     CONFIG = fio.load_json(ENV.CONFIG_PATH)
     num_of_workers = CONFIG["numOfWorkers"]
     # 使用多进程生成NFT
